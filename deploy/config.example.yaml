@@ -56,13 +56,13 @@ defaults:
   fork_policy: summary_only
 
 repositories:
-  - match: "ls1intum/hades"
+  - match: "Hades-Scheduler/hades"
     forge: github-main
     prompt: go-backend-review.md
     triggers:
       pull_request: [opened, synchronize, reopened]
 
-  - match: "ls1intum/*"
+  - match: "Hades-Scheduler/*"
     forge: github-main
     prompt: default.md
     triggers:

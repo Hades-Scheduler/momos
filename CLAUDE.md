@@ -127,9 +127,9 @@ Edit `internal/protocol` (the single source of truth) and both sides that use it
 ## Known interim shortcuts (tracked)
 
 - **Clone image is bespoke `momos-clone`**, not `git-container`, until
-  [ls1intum/git-container#20] adds base+head fetch (§12.2).
+  [Hades-Scheduler/git-container#20] adds base+head fetch (§12.2).
 - **Credentials are embed-at-submission**, not fetch-at-step-start, until #20
   lands; the token endpoints (`/v1/runs/{id}/clone-token`, `/publish-token`) and
   `token` package already implement the fetch seam (§11.5).
 - **Pod hardening** (SA-token, IMDS) is out-of-band, filed as
-  [ls1intum/hades#482] (§12.4).
+  [Hades-Scheduler/hades#482] (§12.4).

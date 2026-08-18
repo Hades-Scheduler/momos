@@ -1,6 +1,6 @@
 # Momos
 
-**AI code review as a service, on top of [Hades](https://github.com/ls1intum/hades).**
+**AI code review as a service, on top of [Hades](https://github.com/Hades-Scheduler/hades).**
 
 Momos receives webhooks from GitHub, resolves a per-repository review policy
 (prompt, model, limits), builds a multi-step Hades job, submits it through the
@@ -67,7 +67,7 @@ curl -u hades:$HADES_AUTH_KEY -H 'Content-Type: application/json' \
 
 A single YAML file (`deploy/config.example.yaml`, [plan.md §5](plan.md)) with
 `${ENV}` / `${ENV:-default}` substitution: defaults plus per-repository
-overrides with glob matching (`ls1intum/*`). The `reviewer.base_url` field is the
+overrides with glob matching (`Hades-Scheduler/*`). The `reviewer.base_url` field is the
 sovereignty knob — same code, cloud model or self-hosted model.
 
 ## Deploy
@@ -117,9 +117,9 @@ Momos runs end to end: a pull request triggers a Hades job that clones, reviews,
 posts the result, and reports back to the run store. A few implementation details
 are deliberately interim, each tracked upstream:
 
-- Clone uses a purpose-built `momos-clone` image until [ls1intum/git-container#20](https://github.com/ls1intum/git-container/issues/20) adds base+head fetch to the shared clone container.
+- Clone uses a purpose-built `momos-clone` image until [Hades-Scheduler/git-container#20](https://github.com/Hades-Scheduler/git-container/issues/20) adds base+head fetch to the shared clone container.
 - Forge tokens are embedded at job submission; the fetch-at-step-start path (endpoints and token signer) is already implemented and switches on once #20 lands.
-- Per-pod hardening for untrusted step code (ServiceAccount token, IMDS egress) is filed as [ls1intum/hades#482](https://github.com/ls1intum/hades/issues/482).
+- Per-pod hardening for untrusted step code (ServiceAccount token, IMDS egress) is filed as [Hades-Scheduler/hades#482](https://github.com/Hades-Scheduler/hades/issues/482).
 
 ## License
 

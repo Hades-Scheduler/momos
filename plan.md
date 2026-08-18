@@ -2,7 +2,7 @@
 
 **Working title: Momos** (Μῶμος, the Greek god of criticism and blame; fits the ls1intum naming convention and is still unused)
 
-Status: 2026-08-17. Based on an analysis of `github.com/ls1intum/hades` (HadesAPI, HadesScheduler, HadesOperator, HadesLogManager, `shared/payload`, `shared/redact`).
+Status: 2026-08-17. Based on an analysis of `github.com/Hades-Scheduler/hades` (HadesAPI, HadesScheduler, HadesOperator, HadesLogManager, `shared/payload`, `shared/redact`).
 
 ---
 
@@ -10,7 +10,7 @@ Status: 2026-08-17. Based on an analysis of `github.com/ls1intum/hades` (HadesAP
 
 A standalone, configurable service that receives webhooks from GitHub, GitLab, or Gitea, resolves an out-of-band review policy per repository (prompt, image, model, limits), builds a multi-step Hades job from it, submits it through the public `POST /build` API, and writes the review comment back into the pull request from inside the container.
 
-> **Read Sections 10-12 first, in reverse-precedence order.** [§10 Locked Decisions & Verified Hades Contract](#10-locked-decisions--verified-hades-contract) is the code-verified Hades contract; [§11 Grilling Session Decisions](#11-grilling-session-decisions-2026-08-17) is the design-interview log; [§12 Review Corrections & Hardening](#12-review-corrections--hardening-agy-pass-2026-08-17) folds in an independent `agy` review that corrected two claims and added the hardening set. **On any conflict the later section wins: §12 > §11 > §10 > §§1-9.** Zero changes to Hades are required (§10.7, corrected). Two Hades-ecosystem improvements are filed as issues: [ls1intum/hades#482](https://github.com/ls1intum/hades/issues/482) and [ls1intum/git-container#20](https://github.com/ls1intum/git-container/issues/20).
+> **Read Sections 10-12 first, in reverse-precedence order.** [§10 Locked Decisions & Verified Hades Contract](#10-locked-decisions--verified-hades-contract) is the code-verified Hades contract; [§11 Grilling Session Decisions](#11-grilling-session-decisions-2026-08-17) is the design-interview log; [§12 Review Corrections & Hardening](#12-review-corrections--hardening-agy-pass-2026-08-17) folds in an independent `agy` review that corrected two claims and added the hardening set. **On any conflict the later section wins: §12 > §11 > §10 > §§1-9.** Zero changes to Hades are required (§10.7, corrected). Two Hades-ecosystem improvements are filed as issues: [Hades-Scheduler/hades#482](https://github.com/Hades-Scheduler/hades/issues/482) and [Hades-Scheduler/git-container#20](https://github.com/Hades-Scheduler/git-container/issues/20).
 
 **Hard constraint: zero changes to Hades.** Momos uses only the documented public surface of Hades:
 
@@ -79,7 +79,7 @@ Five findings from the code that shape the architecture directly:
 ```go
 type ReviewEvent struct {
     Forge       Forge        // github | gitlab | gitea
-    RepoID      string       // "ls1intum/hades"
+    RepoID      string       // "Hades-Scheduler/hades"
     Kind        EventKind    // pull_request | push
     Action      string       // opened | synchronize | reopened
     CloneURL    string
@@ -122,11 +122,11 @@ The three-step split is deliberate because it separates secrets, keeps the LLM c
 
 ```json
 {
-  "name": "momos: review ls1intum/hades#412 @ 8f3a1c2",
+  "name": "momos: review Hades-Scheduler/hades#412 @ 8f3a1c2",
   "priority": 3,
   "metadata": {
     "MOMOS_RUN_ID": "01J...",
-    "MOMOS_REPO": "ls1intum/hades",
+    "MOMOS_REPO": "Hades-Scheduler/hades",
     "MOMOS_HEAD_SHA": "8f3a1c2...",
     "MOMOS_PR": "412"
   },
@@ -139,7 +139,7 @@ The three-step split is deliberate because it separates secrets, keeps the LLM c
       "cpu_limit": 1000,
       "memory_limit": "1G",
       "metadata": {
-        "GIT_URL": "https://github.com/ls1intum/hades.git",
+        "GIT_URL": "https://github.com/Hades-Scheduler/hades.git",
         "GIT_TOKEN": "ghs_… (short-lived, read-only)",
         "GIT_BASE_SHA": "…",
         "GIT_HEAD_SHA": "…",
@@ -294,7 +294,7 @@ defaults:
   fork_policy: summary_only     # no secret access for fork PRs
 
 repositories:
-  - match: "ls1intum/hades"
+  - match: "Hades-Scheduler/hades"
     forge: github-main
     prompt: prompts/go-backend-review.md
     triggers:
@@ -391,7 +391,7 @@ Deliberately left undecided because they do not block the core:
 
 ## 10. Locked Decisions & Verified Hades Contract
 
-This section records the binding decisions and the facts we verified directly against the Hades source at `github.com/ls1intum/hades` (local checkout `../hades`). Every file:line reference was read, not assumed. When the earlier sections and this section disagree, **this section wins**.
+This section records the binding decisions and the facts we verified directly against the Hades source at `github.com/Hades-Scheduler/hades` (local checkout `../hades`). Every file:line reference was read, not assumed. When the earlier sections and this section disagree, **this section wins**.
 
 ### 10.1 Supported executors: Docker and K8s operator only
 
@@ -451,7 +451,7 @@ To guarantee a callback on (almost) every path despite Hades having no result ca
 
 ### 10.7 Zero-diff status: 100%, no Hades change (corrected)
 
-An earlier draft of this section claimed one operator bugfix was needed (job-level metadata injection). **That was wrong** - the operator already injects job-level metadata into every step (`buildjob_controller.go:357-361`, verified in the agy review pass, §12). **Momos requires zero changes to Hades** and the paper's Section 1 claim stands unqualified. (Two *separate* Hades-ecosystem improvements were filed as issues - operator pod hardening [ls1intum/hades#482] and git-container base+head fetch [ls1intum/git-container#20] - but neither is a change to the Hades *scheduler* Momos depends on, and Momos works without them via documented workarounds; see §12.)
+An earlier draft of this section claimed one operator bugfix was needed (job-level metadata injection). **That was wrong** - the operator already injects job-level metadata into every step (`buildjob_controller.go:357-361`, verified in the agy review pass, §12). **Momos requires zero changes to Hades** and the paper's Section 1 claim stands unqualified. (Two *separate* Hades-ecosystem improvements were filed as issues - operator pod hardening [Hades-Scheduler/hades#482] and git-container base+head fetch [Hades-Scheduler/git-container#20] - but neither is a change to the Hades *scheduler* Momos depends on, and Momos works without them via documented workarounds; see §12.)
 
 ### 10.8 Container images
 
@@ -553,7 +553,7 @@ An independent `agy` review, cross-checked against the Hades source, corrected t
 
 ### 12.2 Real bug fixed: base/head diff handover
 
-`git diff <base>...<head>` in the review step **fails as originally drawn**: a clone of only the head branch does not contain `base_sha` (the base branch advances independently; for fork PRs base and head are different repos entirely), and the review step has no credentials to fetch it. **Fix:** the **clone step must fetch both base and head** into `/shared`. This needs a `git-container` extension - filed as **[ls1intum/git-container#20]**. Until merged, the M0 spike can hand-fetch both refs in a shell clone step; the real build depends on the extended git-container. This reinforces §11.3 (reviewer computes the diff) but moves the *ref-fetching* responsibility firmly into the clone step.
+`git diff <base>...<head>` in the review step **fails as originally drawn**: a clone of only the head branch does not contain `base_sha` (the base branch advances independently; for fork PRs base and head are different repos entirely), and the review step has no credentials to fetch it. **Fix:** the **clone step must fetch both base and head** into `/shared`. This needs a `git-container` extension - filed as **[Hades-Scheduler/git-container#20]**. Until merged, the M0 spike can hand-fetch both refs in a shell clone step; the real build depends on the extended git-container. This reinforces §11.3 (reviewer computes the diff) but moves the *ref-fetching* responsibility firmly into the clone step.
 
 ### 12.3 Result-path correctness fixes
 
@@ -565,7 +565,7 @@ An independent `agy` review, cross-checked against the Hades source, corrected t
 
 - **`/shared` and git safety:** review and publish set `git config --global --add safe.directory '*'` (steps run as different UIDs → "dubious ownership" otherwise). Run all diffs with `--no-ext-diff -c diff.external=''` (a malicious `.gitattributes` external-diff driver = arbitrary exec on the untrusted repo). The **publisher must not run git operations that trigger repo hooks** over `/shared` (`.git/hooks` poisoning); if it touches git at all, disable hooks.
 - **`review.json` is untrusted LLM output.** The publisher sanitizes the summary markdown (strip/escape links and HTML) and **must not let the model self-`approve`/merge** - poisoned repo content can steer verdict text. Treat `verdict` as advisory; never wire it to an auto-merge.
-- **IMDS / K8s SA-token exposure (accepted, mitigation filed).** Credentials-only isolation (11.4) does not stop the review container from reaching cloud IMDS (`169.254.169.254`) or reading the mounted K8s ServiceAccount token - cluster-credential theft beyond the accepted "exfiltrate the tree" residual. Decision: **accept for now**, mitigate out-of-band at the operator/cluster level (`automountServiceAccountToken: false`, IMDS egress block) - filed as **[ls1intum/hades#482]**. Not a blocker for Docker-mode M0.
+- **IMDS / K8s SA-token exposure (accepted, mitigation filed).** Credentials-only isolation (11.4) does not stop the review container from reaching cloud IMDS (`169.254.169.254`) or reading the mounted K8s ServiceAccount token - cluster-credential theft beyond the accepted "exfiltrate the tree" residual. Decision: **accept for now**, mitigate out-of-band at the operator/cluster level (`automountServiceAccountToken: false`, IMDS egress block) - filed as **[Hades-Scheduler/hades#482]**. Not a blocker for Docker-mode M0.
 
 ### 12.5 Empirical checks before building
 

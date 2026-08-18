@@ -72,7 +72,7 @@ Put the full config under `config:` and prompts under `prompts:` in your values
 file. `server.external_url` must equal the ingress host. Use `existingSecret` to
 reference a pre-created Secret instead of inlining values.
 
-**K8s operator hardening** (out-of-band, [ls1intum/hades#482]): set
+**K8s operator hardening** (out-of-band, [Hades-Scheduler/hades#482]): set
 `automountServiceAccountToken: false` and a default-deny egress NetworkPolicy on
 the `hades-executor` namespace to block IMDS.
 

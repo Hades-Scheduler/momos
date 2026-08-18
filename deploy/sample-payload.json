@@ -1,9 +1,9 @@
 {
-  "name": "momos: review ls1intum/hades#1 @ deadbeef",
+  "name": "momos: review Hades-Scheduler/hades#1 @ deadbeef",
   "priority": 3,
   "metadata": {
     "MOMOS_RUN_ID": "run_manual_0001",
-    "MOMOS_REPO": "ls1intum/hades",
+    "MOMOS_REPO": "Hades-Scheduler/hades",
     "MOMOS_HEAD_SHA": "REPLACE_HEAD_SHA",
     "MOMOS_PR": "1"
   },
@@ -17,7 +17,7 @@
       "cpu_limit": 1000,
       "memory_limit": "1G",
       "metadata": {
-        "GIT_URL": "https://github.com/ls1intum/hades.git",
+        "GIT_URL": "https://github.com/Hades-Scheduler/hades.git",
         "GIT_TOKEN": "REPLACE_READ_PAT",
         "GIT_HEAD_SHA": "REPLACE_HEAD_SHA",
         "GIT_HEAD_REF": "refs/pull/1/head",
@@ -49,7 +49,7 @@
         "OUTPUT_PRICE_PER_MTOK": "10.0",
         "BASE_SHA": "REPLACE_BASE_SHA",
         "HEAD_SHA": "REPLACE_HEAD_SHA",
-        "REPO_ID": "ls1intum/hades"
+        "REPO_ID": "Hades-Scheduler/hades"
       }
     },
     {
@@ -68,7 +68,7 @@
         "INLINE_COMMENTS": "true",
         "CHECK_RUN": "true",
         "EXPECTED_HEAD_SHA": "REPLACE_HEAD_SHA",
-        "REPO_ID": "ls1intum/hades",
+        "REPO_ID": "Hades-Scheduler/hades",
         "PR_NUMBER": "1",
         "MOMOS_RUN_ID": "run_manual_0001",
         "MOMOS_CALLBACK_URL": "http://momos:8080",

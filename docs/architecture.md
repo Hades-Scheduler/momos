@@ -87,7 +87,7 @@ publish ──(retry backoff)──► POST /v1/runs/{id}/result ──► run s
   (`plan.md` §12.4).
 - **Accepted residual:** egress is open, so an injected agentic reviewer could
   exfiltrate the cloned tree; and the pod's IMDS/SA-token exposure is mitigated
-  out-of-band ([ls1intum/hades#482]).
+  out-of-band ([Hades-Scheduler/hades#482]).
 
 ## Forge abstraction
 

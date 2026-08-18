@@ -84,7 +84,7 @@ config: |
       check_run: true
     fork_policy: summary_only
   repositories:
-    - match: "ls1intum/*"
+    - match: "Hades-Scheduler/*"
       forge: github-main
       prompt: default.md
       triggers:

@@ -27,7 +27,7 @@ const (
 type ReviewEvent struct {
 	Forge      Forge  `json:"forge"`
 	ForgeID    string `json:"forge_id"` // configured forge instance id (e.g. "github-main")
-	RepoID     string `json:"repo_id"`  // "ls1intum/hades"
+	RepoID     string `json:"repo_id"`  // "Hades-Scheduler/hades"
 	CloneURL   string `json:"clone_url"`
 	Kind       Kind   `json:"kind"`
 	Action     string `json:"action"` // opened | synchronize | reopened | ...

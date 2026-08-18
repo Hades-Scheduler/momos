@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # momos-clone: clone the repository and fetch BOTH base and head commits into
 # /shared/repo so the reviewer can compute `git diff <base>...<head>`
-# (plan.md §12.2). Interim shell clone until ls1intum/git-container#20 lands.
+# (plan.md §12.2). Interim shell clone until Hades-Scheduler/git-container#20 lands.
 #
 # Security: the read token is used transport-only via -c http.extraheader (never
 # persisted), the remote URL carries no token, and repo hooks are disabled so a
