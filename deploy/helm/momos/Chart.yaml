@@ -4,6 +4,6 @@ description: AI code review as a service on top of the Hades job scheduler.
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-home: https://github.com/ls1intum/momos
+home: https://github.com/Hades-Scheduler/momos
 sources:
-  - https://github.com/ls1intum/momos
+  - https://github.com/Hades-Scheduler/momos

@@ -15,8 +15,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/ls1intum/momos/internal/event"
-	"github.com/ls1intum/momos/internal/token"
+	"github.com/Hades-Scheduler/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/token"
 )
 
 // GitHub implements Forge and TokenMinter against the GitHub REST API.

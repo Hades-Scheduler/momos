@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ls1intum/momos/internal/config"
-	"github.com/ls1intum/momos/internal/event"
-	"github.com/ls1intum/momos/internal/job"
-	"github.com/ls1intum/momos/internal/metrics"
-	"github.com/ls1intum/momos/internal/store"
-	"github.com/ls1intum/momos/internal/token"
+	"github.com/Hades-Scheduler/momos/internal/config"
+	"github.com/Hades-Scheduler/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/job"
+	"github.com/Hades-Scheduler/momos/internal/metrics"
+	"github.com/Hades-Scheduler/momos/internal/store"
+	"github.com/Hades-Scheduler/momos/internal/token"
 )
 
 // handleGitHubWebhook verifies, dedupes, and processes a webhook. It responds

@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ls1intum/momos/internal/diff"
-	"github.com/ls1intum/momos/internal/llm"
-	"github.com/ls1intum/momos/internal/protocol"
-	"github.com/ls1intum/momos/internal/review"
+	"github.com/Hades-Scheduler/momos/internal/diff"
+	"github.com/Hades-Scheduler/momos/internal/llm"
+	"github.com/Hades-Scheduler/momos/internal/protocol"
+	"github.com/Hades-Scheduler/momos/internal/review"
 )
 
 // Config is read from the step metadata (env).

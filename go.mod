@@ -1,4 +1,4 @@
-module github.com/ls1intum/momos
+module github.com/Hades-Scheduler/momos
 
 go 1.26.5
 

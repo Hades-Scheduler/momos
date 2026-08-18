@@ -15,12 +15,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/ls1intum/momos/internal/config"
-	"github.com/ls1intum/momos/internal/forge"
-	"github.com/ls1intum/momos/internal/hades"
-	"github.com/ls1intum/momos/internal/prompt"
-	"github.com/ls1intum/momos/internal/store"
-	"github.com/ls1intum/momos/internal/token"
+	"github.com/Hades-Scheduler/momos/internal/config"
+	"github.com/Hades-Scheduler/momos/internal/forge"
+	"github.com/Hades-Scheduler/momos/internal/hades"
+	"github.com/Hades-Scheduler/momos/internal/prompt"
+	"github.com/Hades-Scheduler/momos/internal/store"
+	"github.com/Hades-Scheduler/momos/internal/token"
 )
 
 // Server holds the wired dependencies.

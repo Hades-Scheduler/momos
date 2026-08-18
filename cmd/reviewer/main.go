@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ls1intum/momos/internal/reviewer"
+	"github.com/Hades-Scheduler/momos/internal/reviewer"
 )
 
 func main() {

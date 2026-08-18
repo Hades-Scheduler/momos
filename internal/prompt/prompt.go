@@ -15,7 +15,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ls1intum/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/event"
 )
 
 // Rendered is a prompt rendered for a specific event.

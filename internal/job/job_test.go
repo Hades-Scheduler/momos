@@ -4,9 +4,9 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/ls1intum/momos/internal/config"
-	"github.com/ls1intum/momos/internal/event"
-	"github.com/ls1intum/momos/internal/protocol"
+	"github.com/Hades-Scheduler/momos/internal/config"
+	"github.com/Hades-Scheduler/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/protocol"
 )
 
 func sampleInputs() Inputs {

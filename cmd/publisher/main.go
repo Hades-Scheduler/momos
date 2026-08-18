@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ls1intum/momos/internal/publisher"
+	"github.com/Hades-Scheduler/momos/internal/publisher"
 )
 
 func main() {

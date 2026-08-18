@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ls1intum/momos/internal/hades"
-	"github.com/ls1intum/momos/internal/metrics"
-	"github.com/ls1intum/momos/internal/store"
+	"github.com/Hades-Scheduler/momos/internal/hades"
+	"github.com/Hades-Scheduler/momos/internal/metrics"
+	"github.com/Hades-Scheduler/momos/internal/store"
 )
 
 // reconcileLoop polls Hades job status for runs still in "submitted" past a

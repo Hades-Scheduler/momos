@@ -16,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ls1intum/momos/internal/event"
-	"github.com/ls1intum/momos/internal/forge"
-	"github.com/ls1intum/momos/internal/protocol"
-	"github.com/ls1intum/momos/internal/review"
+	"github.com/Hades-Scheduler/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/forge"
+	"github.com/Hades-Scheduler/momos/internal/protocol"
+	"github.com/Hades-Scheduler/momos/internal/review"
 )
 
 // Config is read from the publish step environment.

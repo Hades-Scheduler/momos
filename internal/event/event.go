@@ -3,7 +3,7 @@
 // callback envelope the publisher posts back to Momos (plan.md §11.6).
 package event
 
-import "github.com/ls1intum/momos/internal/review"
+import "github.com/Hades-Scheduler/momos/internal/review"
 
 // Forge identifies the source forge.
 type Forge string

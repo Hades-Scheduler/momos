@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ls1intum/momos/internal/event"
-	"github.com/ls1intum/momos/internal/token"
+	"github.com/Hades-Scheduler/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/token"
 )
 
 // InlineComment is a single inline review comment positioned by path+line+side

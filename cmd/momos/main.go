@@ -12,11 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ls1intum/momos/internal/config"
-	"github.com/ls1intum/momos/internal/prompt"
-	"github.com/ls1intum/momos/internal/server"
-	"github.com/ls1intum/momos/internal/store"
-	"github.com/ls1intum/momos/internal/token"
+	"github.com/Hades-Scheduler/momos/internal/config"
+	"github.com/Hades-Scheduler/momos/internal/prompt"
+	"github.com/Hades-Scheduler/momos/internal/server"
+	"github.com/Hades-Scheduler/momos/internal/store"
+	"github.com/Hades-Scheduler/momos/internal/token"
 )
 
 func main() {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ls1intum/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/event"
 )
 
 func sign(secret, body string) string {

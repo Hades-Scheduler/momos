@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/ls1intum/momos/internal/protocol"
+	"github.com/Hades-Scheduler/momos/internal/protocol"
 )
 
 // git runs a git subcommand in the cloned repo with hardening flags:

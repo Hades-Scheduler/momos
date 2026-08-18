@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ls1intum/momos/internal/review"
+	"github.com/Hades-Scheduler/momos/internal/review"
 )
 
 func TestSanitizeNeutralizesHTMLAndMarker(t *testing.T) {

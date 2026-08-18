@@ -12,10 +12,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ls1intum/momos/internal/config"
-	"github.com/ls1intum/momos/internal/event"
-	"github.com/ls1intum/momos/internal/hades"
-	"github.com/ls1intum/momos/internal/protocol"
+	"github.com/Hades-Scheduler/momos/internal/config"
+	"github.com/Hades-Scheduler/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/hades"
+	"github.com/Hades-Scheduler/momos/internal/protocol"
 )
 
 // Inputs bundles everything the builder needs.
