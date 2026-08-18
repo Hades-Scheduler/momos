@@ -78,6 +78,6 @@ evaluation dataset contract — keep it backward-compatible where possible.
 ## Release checklist
 
 1. `make test && make vet` green.
-2. `make push REGISTRY=ghcr.io/ls1intum TAG=<version>`.
+2. `make push REGISTRY=ghcr.io/Hades-Scheduler TAG=<version>`.
 3. Bump `deploy/helm/momos/Chart.yaml` `version`/`appVersion` and image tags.
 4. Update `plan.md` §12 / `CLAUDE.md` if invariants changed.
