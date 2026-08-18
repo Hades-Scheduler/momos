@@ -1,0 +1,73 @@
+# Example Momos configuration (plan.md §5). Secrets come from ${ENV}.
+hades:
+  url: ${HADES_URL:-http://hades-api:8080}
+  auth_key: ${HADES_AUTH_KEY}
+  log_manager_url: ${HADES_LOGMANAGER_URL:-http://hades-logmanager:8081}
+
+server:
+  addr: ":8080"
+  # Must be reachable from the Hades job containers (callback + token fetch).
+  external_url: ${MOMOS_EXTERNAL_URL:-http://momos:8080}
+
+forges:
+  - id: github-main
+    type: github
+    api: https://api.github.com
+    webhook_secret: ${GH_WEBHOOK_SECRET}
+    # M0: a PAT (contents + pull_requests + checks). For production, configure
+    # `app:` instead and Momos mints scoped installation tokens (plan.md §11.5).
+    token: ${GH_TOKEN}
+    # app:
+    #   app_id: 123456
+    #   installation_id: 7891011
+    #   private_key: ${GH_APP_KEY}
+
+defaults:
+  priority: 3
+  timeout: 15m
+  limits:
+    max_changed_files: 200
+    max_diff_bytes: 400000
+    max_cost_usd: 1.00
+  clone:
+    image: localhost:5000/momos-clone:latest
+    cpu_limit: 1000
+    memory_limit: 1G
+  reviewer:
+    strategy: oneshot
+    image: localhost:5000/momos-reviewer:latest
+    # OpenAI API (plan.md §11.1 — we focus on the OpenAI API).
+    base_url: https://api.openai.com/v1
+    model: gpt-4o
+    api_key: ${LLM_API_KEY}
+    max_output_tokens: 8000
+    max_turns: 12
+    input_price_per_mtok: 2.50
+    output_price_per_mtok: 10.00
+    cpu_limit: 2000
+    memory_limit: 4G
+  publish:
+    image: localhost:5000/momos-publisher:latest
+    mode: pr_review
+    inline_comments: true
+    check_run: true
+    cpu_limit: 500
+    memory_limit: 512M
+  fork_policy: summary_only
+
+repositories:
+  - match: "ls1intum/hades"
+    forge: github-main
+    prompt: go-backend-review.md
+    triggers:
+      pull_request: [opened, synchronize, reopened]
+
+  - match: "ls1intum/*"
+    forge: github-main
+    prompt: default.md
+    triggers:
+      pull_request: [opened, synchronize]
+    # Example: a local model via vLLM (sovereignty variant, plan.md §5).
+    # reviewer:
+    #   base_url: http://vllm.internal:8000/v1
+    #   model: qwen2.5-coder-32b

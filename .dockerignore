@@ -1,0 +1,9 @@
+.git
+*.db
+momos.db
+deploy/
+docs/
+*.md
+plan.md
+/tmp
+scratchpad

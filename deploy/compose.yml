@@ -1,0 +1,39 @@
+# Docker Compose for local Momos (plan.md §10.9). Brings up the Momos service
+# and a local registry (Hades ImagePulls every step image, so the momos-*
+# images must be pushed somewhere the Hades daemon can pull — plan.md §10.4).
+#
+# Point Momos at an existing Hades via config (hades.url / log_manager_url).
+services:
+  momos:
+    build:
+      context: ..
+      dockerfile: images/momos/Dockerfile
+    command: ["-config", "/etc/momos/config.yaml", "-prompts", "/etc/momos/prompts", "-db", "/data/momos.db"]
+    ports:
+      - "8080:8080"
+    environment:
+      # Secrets referenced by config.yaml via ${ENV} and the token signer.
+      MOMOS_TOKEN_SECRET: ${MOMOS_TOKEN_SECRET:?set MOMOS_TOKEN_SECRET}
+      HADES_AUTH_KEY: ${HADES_AUTH_KEY:-}
+      GH_WEBHOOK_SECRET: ${GH_WEBHOOK_SECRET:-}
+      GH_TOKEN: ${GH_TOKEN:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    volumes:
+      - ./config.example.yaml:/etc/momos/config.yaml:ro
+      - ../prompts:/etc/momos/prompts:ro
+      - momos-data:/data
+    restart: unless-stopped
+
+  # Local image registry so `docker build` + `docker push localhost:5000/momos-*`
+  # gives Hades a pullable source during development.
+  registry:
+    image: registry:2
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry-data:/var/lib/registry
+    restart: unless-stopped
+
+volumes:
+  momos-data:
+  registry-data:

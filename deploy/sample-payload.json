@@ -1,0 +1,79 @@
+{
+  "name": "momos: review ls1intum/hades#1 @ deadbeef",
+  "priority": 3,
+  "metadata": {
+    "MOMOS_RUN_ID": "run_manual_0001",
+    "MOMOS_REPO": "ls1intum/hades",
+    "MOMOS_HEAD_SHA": "REPLACE_HEAD_SHA",
+    "MOMOS_PR": "1"
+  },
+  "steps": [
+    {
+      "id": 1,
+      "name": "Clone",
+      "image": "localhost:5000/momos-clone:latest",
+      "script": "/app/clone.sh",
+      "continue_on_error": true,
+      "cpu_limit": 1000,
+      "memory_limit": "1G",
+      "metadata": {
+        "GIT_URL": "https://github.com/ls1intum/hades.git",
+        "GIT_TOKEN": "REPLACE_READ_PAT",
+        "GIT_HEAD_SHA": "REPLACE_HEAD_SHA",
+        "GIT_HEAD_REF": "refs/pull/1/head",
+        "GIT_BASE_SHA": "REPLACE_BASE_SHA",
+        "GIT_BASE_REF": "main",
+        "GIT_IS_PR": "true"
+      }
+    },
+    {
+      "id": 2,
+      "name": "AI Review",
+      "image": "localhost:5000/momos-reviewer:latest",
+      "script": "/app/reviewer",
+      "continue_on_error": true,
+      "cpu_limit": 2000,
+      "memory_limit": "4G",
+      "metadata": {
+        "REVIEW_STRATEGY": "oneshot",
+        "LLM_BASE_URL": "https://api.openai.com/v1",
+        "LLM_MODEL": "gpt-4o",
+        "LLM_API_KEY": "REPLACE_OPENAI_KEY",
+        "PROMPT_B64": "WW91IGFyZSBhIHNlbmlvciBjb2RlIHJldmlld2VyLiBSZXNwb25kIHdpdGggcmV2aWV3IEpTT04gb25seS4=",
+        "PROMPT_VERSION": "manual@0001",
+        "MAX_OUTPUT_TOKENS": "8000",
+        "MAX_DIFF_BYTES": "400000",
+        "MAX_CHANGED_FILES": "200",
+        "MAX_COST_USD": "1.0",
+        "INPUT_PRICE_PER_MTOK": "2.5",
+        "OUTPUT_PRICE_PER_MTOK": "10.0",
+        "BASE_SHA": "REPLACE_BASE_SHA",
+        "HEAD_SHA": "REPLACE_HEAD_SHA",
+        "REPO_ID": "ls1intum/hades"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Publish",
+      "image": "localhost:5000/momos-publisher:latest",
+      "script": "/app/publisher",
+      "continue_on_error": false,
+      "cpu_limit": 500,
+      "memory_limit": "512M",
+      "metadata": {
+        "FORGE": "github",
+        "FORGE_API": "https://api.github.com",
+        "FORGE_TOKEN": "REPLACE_WRITE_PAT",
+        "PUBLISH_MODE": "pr_review",
+        "INLINE_COMMENTS": "true",
+        "CHECK_RUN": "true",
+        "EXPECTED_HEAD_SHA": "REPLACE_HEAD_SHA",
+        "REPO_ID": "ls1intum/hades",
+        "PR_NUMBER": "1",
+        "MOMOS_RUN_ID": "run_manual_0001",
+        "MOMOS_CALLBACK_URL": "http://momos:8080",
+        "MOMOS_CALLBACK_TOKEN": ""
+      }
+    }
+  ]
+}

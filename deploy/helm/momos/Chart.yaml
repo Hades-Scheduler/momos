@@ -1,0 +1,9 @@
+apiVersion: v2
+name: momos
+description: AI code review as a service on top of the Hades job scheduler.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/ls1intum/momos
+sources:
+  - https://github.com/ls1intum/momos
