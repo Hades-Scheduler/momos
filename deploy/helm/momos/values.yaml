@@ -4,6 +4,10 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
+# Pull secrets for the momos service image, if the GHCR packages are private.
+# e.g. [{ name: ghcr-pull }] after creating a docker-registry secret.
+imagePullSecrets: []
+
 replicaCount: 1
 
 service:
