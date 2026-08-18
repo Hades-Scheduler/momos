@@ -30,31 +30,37 @@ Three steps share Hades's `/shared` volume. The publisher is the *universal
 reporter*: it runs even if the review failed, and always reports back. See
 [`docs/architecture.md`](docs/architecture.md).
 
-## Quickstart (M0, local)
+## Quickstart
 
-Prerequisites: a running Hades (Docker executor), Docker, Go 1.26+, a throwaway
-GitHub repo you own, and an OpenAI API key.
+Prerequisites: a running Hades (Docker executor), Docker, Go 1.26+, a GitHub repo
+you own, and an OpenAI API key.
 
-```bash
-# 1. Build and push the step images to a registry Hades can pull from.
-make push REGISTRY=localhost:5000        # needs the local registry (deploy/compose.yml)
-
-# 2. Submit a hand-written job (edit deploy/sample-payload.json first:
-#    REPLACE_* → real SHAs, a read PAT, a write PAT, your OpenAI key).
-curl -u hades:$HADES_AUTH_KEY -H 'Content-Type: application/json' \
-     --data @deploy/sample-payload.json \
-     $HADES_URL/build
-
-# → a review comment appears on the PR.
-```
-
-Then run the full service so real webhooks drive it:
+Run the service so real webhooks drive reviews:
 
 ```bash
 export MOMOS_TOKEN_SECRET=$(openssl rand -hex 32)
 export HADES_AUTH_KEY=... GH_WEBHOOK_SECRET=... GH_TOKEN=... LLM_API_KEY=...
 docker compose -f deploy/compose.yml up --build
 # point a GitHub webhook (pull_request events) at https://<host>/hooks/github
+```
+
+The step images are published by CI to `ghcr.io/Hades-Scheduler/momos-*` (see
+below); for local work you can build and push your own into the registry that
+Hades pulls from:
+
+```bash
+make push REGISTRY=localhost:5000        # local registry from deploy/compose.yml
+```
+
+To exercise the job pipeline directly, without the service, submit a hand-written
+payload (edit `deploy/sample-payload.json` first: `REPLACE_*` → real SHAs, a read
+token, a write token, your OpenAI key):
+
+```bash
+curl -u hades:$HADES_AUTH_KEY -H 'Content-Type: application/json' \
+     --data @deploy/sample-payload.json \
+     $HADES_URL/build
+# → a review comment appears on the PR.
 ```
 
 ## Configuration
@@ -67,9 +73,23 @@ sovereignty knob — same code, cloud model or self-hosted model.
 ## Deploy
 
 - **Docker Compose:** `deploy/compose.yml` (service + local registry).
-- **Helm:** `deploy/helm/momos` — `helm install momos deploy/helm/momos -f my-values.yaml`.
+- **Helm:** `deploy/helm/momos` — `helm install momos oci://ghcr.io/Hades-Scheduler/charts/momos`
+  (or from the local path: `helm install momos deploy/helm/momos -f my-values.yaml`).
 
 See [`docs/operations.md`](docs/operations.md).
+
+## Continuous integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `go vet`/`build`/`test` on every
+push and pull request, then publishes on success:
+
+- **Images** to `ghcr.io/Hades-Scheduler/momos-{clone,reviewer,publisher,momos}`
+  — tagged `latest` on `main`, `pr-<number>` on pull requests, and the release
+  tag on releases.
+- **Helm chart** to `oci://ghcr.io/Hades-Scheduler/charts` (SemVer version on
+  releases, a `-main` prerelease on `main`).
+
+Runs for the same branch/PR cancel their predecessors.
 
 ## Endpoints
 
@@ -91,12 +111,15 @@ make run     # service against the example config
 
 More in [`docs/development.md`](docs/development.md) and [`CLAUDE.md`](CLAUDE.md).
 
-## Status & tracked follow-ups
+## Tracked follow-ups
 
-Working end to end (M0+M1). Interim shortcuts, each tracked upstream:
-- Clone uses a bespoke `momos-clone` image until [ls1intum/git-container#20](https://github.com/ls1intum/git-container/issues/20) adds base+head fetch.
-- Credentials are embedded at submission until #20 enables fetch-at-step-start (the seam is already built).
-- Pod hardening (SA-token, IMDS) is filed as [ls1intum/hades#482](https://github.com/ls1intum/hades/issues/482).
+Momos runs end to end: a pull request triggers a Hades job that clones, reviews,
+posts the result, and reports back to the run store. A few implementation details
+are deliberately interim, each tracked upstream:
+
+- Clone uses a purpose-built `momos-clone` image until [ls1intum/git-container#20](https://github.com/ls1intum/git-container/issues/20) adds base+head fetch to the shared clone container.
+- Forge tokens are embedded at job submission; the fetch-at-step-start path (endpoints and token signer) is already implemented and switches on once #20 lands.
+- Per-pod hardening for untrusted step code (ServiceAccount token, IMDS egress) is filed as [ls1intum/hades#482](https://github.com/ls1intum/hades/issues/482).
 
 ## License
 
