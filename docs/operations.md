@@ -25,7 +25,7 @@ substitution.
 | `server.addr` | listen address |
 | `server.external_url` | **base URL the job containers call back to** — must be routable from the Hades network |
 | `forges[].webhook_secret` | HMAC secret for webhook verification |
-| `forges[].token` | PAT (M0) — or configure `forges[].app` for installation tokens |
+| `forges[].token` | PAT (simplest) — or configure `forges[].app` for installation tokens |
 | `defaults.*` | fallback policy; `reviewer.base_url`/`model` are the model knobs |
 | `defaults.limits` | `max_changed_files`, `max_diff_bytes`, `max_cost_usd` |
 | `repositories[]` | glob `match` + overrides + `triggers` |
@@ -40,7 +40,7 @@ service refuses to start.
    `GH_WEBHOOK_SECRET`, events = *Pull requests* (and *Pushes* if you use push
    triggers).
 2. **Credentials:**
-   - **M0:** a PAT with `contents:read`, `pull_requests:write`, `checks:write`
+   - **Quick start:** a PAT with `contents:read`, `pull_requests:write`, `checks:write`
      → `GH_TOKEN`.
    - **Production:** a GitHub App (`app_id`, `installation_id`, `private_key`);
      Momos mints per-run scoped installation tokens. Set `forges[].app` and drop
@@ -76,7 +76,7 @@ reference a pre-created Secret instead of inlining values.
 `automountServiceAccountToken: false` and a default-deny egress NetworkPolicy on
 the `hades-executor` namespace to block IMDS.
 
-## Running M0 by hand
+## Running a job by hand
 
 Edit `deploy/sample-payload.json` (replace `REPLACE_*`), then:
 

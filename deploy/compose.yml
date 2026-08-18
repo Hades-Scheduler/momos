@@ -12,9 +12,16 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Secrets referenced by config.yaml via ${ENV} and the token signer.
+      # Secrets + endpoints referenced by config.yaml via ${ENV} and the token
+      # signer. Set these in a .env file next to this compose file, or export
+      # them in your shell — no YAML edits needed for a demo.
       MOMOS_TOKEN_SECRET: ${MOMOS_TOKEN_SECRET:?set MOMOS_TOKEN_SECRET}
+      HADES_URL: ${HADES_URL:-http://hades-api:8080}
+      HADES_LOGMANAGER_URL: ${HADES_LOGMANAGER_URL:-http://hades-logmanager:8081}
       HADES_AUTH_KEY: ${HADES_AUTH_KEY:-}
+      # The URL the GitHub webhook AND the Hades job containers reach Momos at.
+      # For a demo, use your public tunnel URL (see docs/install.md).
+      MOMOS_EXTERNAL_URL: ${MOMOS_EXTERNAL_URL:-http://momos:8080}
       GH_WEBHOOK_SECRET: ${GH_WEBHOOK_SECRET:-}
       GH_TOKEN: ${GH_TOKEN:-}
       LLM_API_KEY: ${LLM_API_KEY:-}

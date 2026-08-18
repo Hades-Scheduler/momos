@@ -14,7 +14,8 @@ request from inside the job container — **without a single change to Hades.**
 - **Secure by construction:** the review step holds no forge credentials, so it
   cannot push or post — it can only produce a `review.json`.
 
-> Momos is **Μῶμος**, the Greek god of criticism. Design and rationale live in
+> Momos is **Μῶμος**, the Greek god of criticism. Install & demo walkthrough in
+> [`docs/install.md`](docs/install.md); design and rationale in
 > [`plan.md`](plan.md); developer/agent orientation in [`CLAUDE.md`](CLAUDE.md);
 > deep docs in [`docs/`](docs/).
 
@@ -31,6 +32,10 @@ reporter*: it runs even if the review failed, and always reports back. See
 [`docs/architecture.md`](docs/architecture.md).
 
 ## Quickstart
+
+> **Want the full walkthrough?** [`docs/install.md`](docs/install.md) takes you
+> from nothing to a live review on a demo repo, step by step (smoke test first,
+> then the webhook-driven demo). The short version follows.
 
 Prerequisites: a running Hades (Docker executor), Docker, Go 1.26+, a GitHub repo
 you own, and an OpenAI API key.
