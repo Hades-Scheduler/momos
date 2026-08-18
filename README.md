@@ -14,7 +14,7 @@ request from inside the job container — **without a single change to Hades.**
 - **Secure by construction:** the review step holds no forge credentials, so it
   cannot push or post — it can only produce a `review.json`.
 
-> Momos is **Μῶμος**, the Greek god of criticism. Install & demo walkthrough in
+> Momos is **Μῶμος**, the Greek god of criticism. Install guide in
 > [`docs/install.md`](docs/install.md); design and rationale in
 > [`plan.md`](plan.md); developer/agent orientation in [`CLAUDE.md`](CLAUDE.md);
 > deep docs in [`docs/`](docs/).
@@ -33,40 +33,27 @@ reporter*: it runs even if the review failed, and always reports back. See
 
 ## Quickstart
 
-> **Want the full walkthrough?** [`docs/install.md`](docs/install.md) takes you
-> from nothing to a live review on a demo repo, step by step (smoke test first,
-> then the webhook-driven demo). The short version follows.
+> Full step-by-step walkthrough: [`docs/install.md`](docs/install.md).
 
-Prerequisites: a running Hades (Docker executor), Docker, Go 1.26+, a GitHub repo
-you own, and an OpenAI API key.
+Prerequisites: a running Hades (Docker executor) that can pull from GHCR, Docker,
+a GitHub repo you own, and an OpenAI API key. Hades pulls the step images from
+`ghcr.io/hades-scheduler/momos-*` — nothing to build.
 
-Run the service so real webhooks drive reviews:
+1. Point Momos at your repo in the `repositories:` block of
+   `deploy/config.example.yaml`.
+2. Put secrets + your public URL in `deploy/.env` (`MOMOS_TOKEN_SECRET`,
+   `MOMOS_EXTERNAL_URL`, `HADES_URL`, `HADES_AUTH_KEY`, `GH_WEBHOOK_SECRET`,
+   `GH_TOKEN`, `LLM_API_KEY`).
+3. Start the service:
 
-```bash
-export MOMOS_TOKEN_SECRET=$(openssl rand -hex 32)
-export HADES_AUTH_KEY=... GH_WEBHOOK_SECRET=... GH_TOKEN=... LLM_API_KEY=...
-docker compose -f deploy/compose.yml up --build
-# point a GitHub webhook (pull_request events) at https://<host>/hooks/github
-```
+   ```bash
+   docker compose -f deploy/compose.yml up -d momos
+   ```
+4. Add a GitHub webhook for pull-request events pointing at
+   `<your-public-url>/hooks/github`, then open a PR.
 
-The step images are published by CI to `ghcr.io/Hades-Scheduler/momos-*` (see
-below); for local work you can build and push your own into the registry that
-Hades pulls from:
-
-```bash
-make push REGISTRY=localhost:5000        # local registry from deploy/compose.yml
-```
-
-To exercise the job pipeline directly, without the service, submit a hand-written
-payload (edit `deploy/sample-payload.json` first: `REPLACE_*` → real SHAs, a read
-token, a write token, your OpenAI key):
-
-```bash
-curl -u hades:$HADES_AUTH_KEY -H 'Content-Type: application/json' \
-     --data @deploy/sample-payload.json \
-     $HADES_URL/build
-# → a review comment appears on the PR.
-```
+Developing Momos and want to test locally built images? See the smoke test in
+[`docs/development.md`](docs/development.md#smoke-test-the-pipeline-by-hand).
 
 ## Configuration
 
@@ -78,7 +65,7 @@ sovereignty knob — same code, cloud model or self-hosted model.
 ## Deploy
 
 - **Docker Compose:** `deploy/compose.yml` (service + local registry).
-- **Helm:** `deploy/helm/momos` — `helm install momos oci://ghcr.io/Hades-Scheduler/charts/momos`
+- **Helm:** `deploy/helm/momos` — `helm install momos oci://ghcr.io/hades-scheduler/charts/momos`
   (or from the local path: `helm install momos deploy/helm/momos -f my-values.yaml`).
 
 See [`docs/operations.md`](docs/operations.md).
@@ -88,10 +75,10 @@ See [`docs/operations.md`](docs/operations.md).
 GitHub Actions (`.github/workflows/ci.yml`) runs `go vet`/`build`/`test` on every
 push and pull request, then publishes on success:
 
-- **Images** to `ghcr.io/Hades-Scheduler/momos-{clone,reviewer,publisher,momos}`
+- **Images** to `ghcr.io/hades-scheduler/momos-{clone,reviewer,publisher,momos}`
   — tagged `latest` on `main`, `pr-<number>` on pull requests, and the release
   tag on releases.
-- **Helm chart** to `oci://ghcr.io/Hades-Scheduler/charts` (SemVer version on
+- **Helm chart** to `oci://ghcr.io/hades-scheduler/charts` (SemVer version on
   releases, a `-main` prerelease on `main`).
 
 Runs for the same branch/PR cancel their predecessors.

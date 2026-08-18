@@ -149,5 +149,7 @@ jobs:
       - name: Push chart to OCI
         if: github.event_name != 'pull_request'
         run: |
+          # OCI references must be lowercase; the org is "Hades-Scheduler".
+          owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           helm push "dist/momos-${{ steps.ver.outputs.version }}.tgz" \
-            "oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts"
+            "oci://${{ env.REGISTRY }}/$owner/charts"

@@ -1,6 +1,6 @@
 # Default values for the Momos chart (plan.md §10.9).
 image:
-  repository: ghcr.io/Hades-Scheduler/momos
+  repository: ghcr.io/hades-scheduler/momos
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -67,10 +67,10 @@ config: |
       max_diff_bytes: 400000
       max_cost_usd: 1.00
     clone:
-      image: ghcr.io/Hades-Scheduler/momos-clone:latest
+      image: ghcr.io/hades-scheduler/momos-clone:latest
     reviewer:
       strategy: oneshot
-      image: ghcr.io/Hades-Scheduler/momos-reviewer:latest
+      image: ghcr.io/hades-scheduler/momos-reviewer:latest
       base_url: https://api.openai.com/v1
       model: gpt-4o
       api_key: ${LLM_API_KEY}
@@ -78,7 +78,7 @@ config: |
       input_price_per_mtok: 2.50
       output_price_per_mtok: 10.00
     publish:
-      image: ghcr.io/Hades-Scheduler/momos-publisher:latest
+      image: ghcr.io/hades-scheduler/momos-publisher:latest
       mode: pr_review
       inline_comments: true
       check_run: true

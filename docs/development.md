@@ -19,6 +19,56 @@ make images           # build the four images
 The build is cgo-free (`modernc.org/sqlite` is pure Go), so binaries are static
 and images are minimal.
 
+## Smoke-test the pipeline by hand
+
+To exercise the whole clone → review → publish pipeline with your **locally
+built** images — without the service or a webhook — submit a hand-written job
+straight to Hades. This is the fastest way to validate a change to a step image.
+
+1. Build your images and push them where Hades can pull them. The Compose file
+   ships a local registry on `localhost:5000` for this:
+
+   ```bash
+   docker compose -f deploy/compose.yml up -d registry
+   make push REGISTRY=localhost:5000
+   ```
+
+2. Get the head and base SHAs of a pull request on a test repo:
+
+   ```bash
+   git rev-parse origin/main             # -> BASE_SHA
+   git rev-parse origin/<your-pr-branch> # -> HEAD_SHA
+   ```
+
+3. Fill in the sample payload (it already points its images at
+   `localhost:5000/momos-*`):
+
+   ```bash
+   cp deploy/sample-payload.json /tmp/job.json
+   # In /tmp/job.json replace:
+   #   Hades-Scheduler/hades -> <owner>/<repo>   (name, MOMOS_REPO, GIT_URL, REPO_ID x2)
+   #   refs/pull/1/head       -> refs/pull/<PR>/head, and PR_NUMBER "1" -> your PR number
+   #   REPLACE_HEAD_SHA (x3)  -> HEAD_SHA
+   #   REPLACE_BASE_SHA (x2)  -> BASE_SHA
+   #   REPLACE_READ_PAT / REPLACE_WRITE_PAT -> a GitHub token
+   #   REPLACE_OPENAI_KEY     -> your OpenAI key
+   ```
+
+4. Submit it:
+
+   ```bash
+   curl -u hades:$HADES_AUTH_KEY -H 'Content-Type: application/json' \
+        --data @/tmp/job.json $HADES_URL/build
+   # -> {"message":"Successfully enqueued job","job_id":"..."}
+   ```
+
+A review comment should appear on the PR within a minute. `MOMOS_CALLBACK_TOKEN`
+is empty in the sample, so the publisher skips the callback — that's fine for a
+smoke test.
+
+For setting Momos up against a real repo (service + webhook, images pulled from
+GHCR), see [install.md](install.md).
+
 ## Layout & dependencies
 
 See the repository map in [`../CLAUDE.md`](../CLAUDE.md). Packages are small and
@@ -78,6 +128,6 @@ evaluation dataset contract — keep it backward-compatible where possible.
 ## Release checklist
 
 1. `make test && make vet` green.
-2. `make push REGISTRY=ghcr.io/Hades-Scheduler TAG=<version>`.
+2. `make push REGISTRY=ghcr.io/hades-scheduler TAG=<version>`.
 3. Bump `deploy/helm/momos/Chart.yaml` `version`/`appVersion` and image tags.
 4. Update `plan.md` §12 / `CLAUDE.md` if invariants changed.

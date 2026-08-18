@@ -85,7 +85,7 @@ func cloneStep(in Inputs) hades.Step {
 	return hades.Step{
 		ID:              1,
 		Name:            "Clone",
-		Image:           orDefault(in.Policy.Clone.Image, "ghcr.io/Hades-Scheduler/momos-clone:latest"),
+		Image:           orDefault(in.Policy.Clone.Image, "ghcr.io/hades-scheduler/momos-clone:latest"),
 		Script:          "/app/clone.sh", // non-empty so continue_on_error is honored (plan.md §12.1)
 		ContinueOnError: true,
 		Metadata:        meta,
@@ -118,7 +118,7 @@ func reviewStep(in Inputs) hades.Step {
 	return hades.Step{
 		ID:              2,
 		Name:            "AI Review",
-		Image:           orDefault(r.Image, "ghcr.io/Hades-Scheduler/momos-reviewer:latest"),
+		Image:           orDefault(r.Image, "ghcr.io/hades-scheduler/momos-reviewer:latest"),
 		Script:          "/app/reviewer",
 		ContinueOnError: true, // publish still runs to surface failures (plan.md §10.6)
 		Metadata:        meta,
@@ -147,7 +147,7 @@ func publishStep(in Inputs) hades.Step {
 	return hades.Step{
 		ID:          3,
 		Name:        "Publish",
-		Image:       orDefault(p.Image, "ghcr.io/Hades-Scheduler/momos-publisher:latest"),
+		Image:       orDefault(p.Image, "ghcr.io/hades-scheduler/momos-publisher:latest"),
 		Script:      "/app/publisher",
 		Metadata:    meta,
 		CPULimit:    p.CPULimit,

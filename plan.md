@@ -134,7 +134,7 @@ The three-step split is deliberate because it separates secrets, keeps the LLM c
     {
       "id": 1,
       "name": "Clone & Context",
-      "image": "ghcr.io/Hades-Scheduler/momos-clone:1.0",
+      "image": "ghcr.io/hades-scheduler/momos-clone:1.0",
       "script": "/usr/local/bin/prepare-context.sh",
       "cpu_limit": 1000,
       "memory_limit": "1G",
@@ -150,7 +150,7 @@ The three-step split is deliberate because it separates secrets, keeps the LLM c
     {
       "id": 2,
       "name": "AI Review",
-      "image": "ghcr.io/Hades-Scheduler/momos-reviewer-oneshot:1.0",
+      "image": "ghcr.io/hades-scheduler/momos-reviewer-oneshot:1.0",
       "script": "/usr/local/bin/review.sh",
       "cpu_limit": 2000,
       "memory_limit": "4G",
@@ -168,7 +168,7 @@ The three-step split is deliberate because it separates secrets, keeps the LLM c
     {
       "id": 3,
       "name": "Publish",
-      "image": "ghcr.io/Hades-Scheduler/momos-publisher:1.0",
+      "image": "ghcr.io/hades-scheduler/momos-publisher:1.0",
       "script": "/usr/local/bin/publish.sh",
       "cpu_limit": 500,
       "memory_limit": "512M",
@@ -281,7 +281,7 @@ defaults:
     max_cost_usd: 1.00
   reviewer:
     strategy: oneshot
-    image: ghcr.io/Hades-Scheduler/momos-reviewer-oneshot:1.0
+    image: ghcr.io/hades-scheduler/momos-reviewer-oneshot:1.0
     model: claude-sonnet-4-5
     base_url: https://api.anthropic.com
     api_key: ${LLM_API_KEY}
@@ -301,7 +301,7 @@ repositories:
       pull_request: [opened, synchronize, reopened]
     reviewer:
       strategy: agentic
-      image: ghcr.io/Hades-Scheduler/momos-reviewer-agentic:1.0
+      image: ghcr.io/hades-scheduler/momos-reviewer-agentic:1.0
       model: claude-opus-4-1
 
   - match: "ls1intum/artemis-exercise-*"
@@ -429,7 +429,7 @@ The Docker executor **unconditionally `ImagePull`s every step image** and fails 
 
 - All `momos-*` images MUST be resolvable from a registry the Hades daemon can reach.
 - **Local development:** run a local registry (`registry:2` on `localhost:5000`) and tag images `localhost:5000/momos-*`, or use public GHCR images. A plain local `docker build` tag will not work.
-- **Production:** publish to `ghcr.io/Hades-Scheduler/momos-*`; ensure the daemon has pull credentials for private images.
+- **Production:** publish to `ghcr.io/hades-scheduler/momos-*`; ensure the daemon has pull credentials for private images.
 
 ### 10.5 Result path: explicit job callback, no log scraping
 
@@ -461,11 +461,11 @@ Job topology is **three steps** (revised from the four-step draft):
 
 | Step | Image | Purpose |
 |---|---|---|
-| 1. Clone | `git-container` (reused, `ghcr.io/Hades-Scheduler/git-container`) | Full clone of the head branch into `/shared/<repo>` (`REPOSITORY_DIR=/shared` to avoid the fallback quirk). Read token via `HADES_0_USERNAME`/`HADES_0_PASSWORD`. go-git auth is transport-only, so no token persists in `.git/config`. |
+| 1. Clone | `git-container` (reused, `ghcr.io/hades-scheduler/git-container`) | Full clone of the head branch into `/shared/<repo>` (`REPOSITORY_DIR=/shared` to avoid the fallback quirk). Read token via `HADES_0_USERNAME`/`HADES_0_PASSWORD`. go-git auth is transport-only, so no token persists in `.git/config`. |
 | 2. Review | `momos-reviewer` (Go, **carries `git`**) | Reads the clone, runs its own `git diff <base>...<head>` (and, in agentic mode, navigates the tree), decodes `PROMPT_B64`, calls the LLM over the OpenAI-compatible client, writes `/shared/out/review.json`. `continue_on_error: true`. **No forge credentials** (the isolation boundary, 11.4). |
 | 3. Publish | `momos-publisher` (Go) | Validate `review.json`, freshness check vs `EXPECTED_HEAD_SHA`, post via the modern GitHub reviews API, callback to Momos. Universal reporter (10.6). |
 
-All Momos images published to `ghcr.io/Hades-Scheduler/momos-*` and mirrored to a local registry for development (10.4).
+All Momos images published to `ghcr.io/hades-scheduler/momos-*` and mirrored to a local registry for development (10.4).
 
 **Clone-container reuse (reversed from the draft).** The earlier draft said build a bespoke `momos-clone` because `git-container` produces no diff and has the `REPOSITORY_DIR` fallback quirk (`env.go` + `main.go:27`). **Decision reversed:** reuse `git-container` for the clone and move all diff/context work into the reviewer step (which carries `git`). The quirk is sidestepped by setting `REPOSITORY_DIR=/shared` (the mount root always exists). `git-container` may be extended if the clone step needs more (e.g. the fetch-at-step-start token flow, 11.4) - we own that project.
 

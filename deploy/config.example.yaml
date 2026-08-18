@@ -30,12 +30,12 @@ defaults:
     max_diff_bytes: 400000
     max_cost_usd: 1.00
   clone:
-    image: localhost:5000/momos-clone:latest
+    image: ghcr.io/hades-scheduler/momos-clone:latest
     cpu_limit: 1000
     memory_limit: 1G
   reviewer:
     strategy: oneshot
-    image: localhost:5000/momos-reviewer:latest
+    image: ghcr.io/hades-scheduler/momos-reviewer:latest
     # OpenAI API (plan.md §11.1 — we focus on the OpenAI API).
     base_url: https://api.openai.com/v1
     model: gpt-4o
@@ -47,7 +47,7 @@ defaults:
     cpu_limit: 2000
     memory_limit: 4G
   publish:
-    image: localhost:5000/momos-publisher:latest
+    image: ghcr.io/hades-scheduler/momos-publisher:latest
     mode: pr_review
     inline_comments: true
     check_run: true
