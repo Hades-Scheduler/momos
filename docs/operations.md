@@ -76,13 +76,24 @@ reference a pre-created Secret instead of inlining values.
 `automountServiceAccountToken: false` and a default-deny egress NetworkPolicy on
 the `hades-executor` namespace to block IMDS.
 
-## Deploying to Kubernetes
+## Deploying to Kubernetes (CI)
 
-CI publishes the images and the Helm chart to GHCR on every `main` push and
-release (`.github/workflows/ci.yml`); it does **not** deploy. Roll the release
-out to your cluster with the chart — either `helm upgrade --install` (see
-[Deploy — Helm](#deploy--helm)) or a GitOps controller (Argo CD / Flux) tracking
-`oci://ghcr.io/hades-scheduler/charts/momos`.
+The `deploy` job in `.github/workflows/ci.yml` runs `helm upgrade --install`
+against the cluster on every `main` push, release, and `workflow_dispatch`
+(never on PRs). One-time setup:
+
+1. A **`production` environment** on the repo with a single secret **`KUBECONFIG`**
+   — base64-encoded kubeconfig scoped to the `momos` namespace
+   (`base64 -w0 < kubeconfig`).
+2. An in-cluster **Secret `momos-secrets`** in the `momos` namespace holding
+   `MOMOS_TOKEN_SECRET`, `HADES_AUTH_KEY`, `GH_WEBHOOK_SECRET`, `GH_TOKEN`,
+   `LLM_API_KEY` (referenced via `existingSecret` — the chart creates no Secret
+   itself, so nothing sensitive lives in the repo or in Actions).
+3. Edit the non-secret bits in **`deploy/values-prod.yaml`** (ingress host,
+   Hades service URLs, `external_url`, repo match).
+
+The job pins `image.tag` to the release tag on releases and `latest` on `main`,
+then `kubectl rollout restart`s to re-pull a moving `latest`.
 
 ## Running a job by hand
 

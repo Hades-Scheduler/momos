@@ -154,3 +154,46 @@ jobs:
           owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           helm push "dist/momos-${{ steps.ver.outputs.version }}.tgz" \
             "oci://${{ env.REGISTRY }}/$owner/charts"
+
+  # ---- deploy: helm upgrade against the Kubernetes cluster ---------------
+  # Requires a `production` environment with ONE secret:
+  #   KUBECONFIG  — base64-encoded kubeconfig scoped to the momos namespace
+  #                 (create with: base64 -w0 < kubeconfig)
+  # The app secrets are NOT here — they live in the in-cluster `momos-secrets`
+  # Secret referenced by deploy/values-prod.yaml (existingSecret). Runs on main
+  # pushes, releases, and workflow_dispatch; never on PRs.
+  deploy:
+    needs: [images, chart]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - uses: azure/setup-kubectl@v4
+
+      - name: Write kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "image_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "image_tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy
+        run: |
+          helm upgrade --install momos deploy/helm/momos \
+            --namespace momos --create-namespace \
+            -f deploy/values-prod.yaml \
+            --set image.tag=${{ steps.tag.outputs.image_tag }} \
+            --wait --timeout 5m
+          # Force a re-pull of a moving :latest tag (a no-op for unique release tags).
+          kubectl -n momos rollout restart deploy/momos-momos
+          kubectl -n momos rollout status  deploy/momos-momos --timeout=180s
