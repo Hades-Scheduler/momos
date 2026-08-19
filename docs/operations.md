@@ -76,17 +76,13 @@ reference a pre-created Secret instead of inlining values.
 `automountServiceAccountToken: false` and a default-deny egress NetworkPolicy on
 the `hades-executor` namespace to block IMDS.
 
-## Automated deployment (CI)
+## Deploying to Kubernetes
 
-The `deploy` job in `.github/workflows/ci.yml` ships Momos to a test VM behind
-the shared Traefik reverse proxy (mirroring the Hades repo), on pushes to `main`,
-releases, and `workflow_dispatch`. It SSHes through the deployment gateway,
-copies `deploy/docker-compose.test.yml` + config + prompts, and runs
-`docker compose up --pull=always`. Configure a **`momos-test` environment** with
-the VM/gateway vars and the Momos secrets (listed in the job's header comment).
-Traefik must already be running on the VM (the Hades deployment brings it up);
-Momos joins the shared `traefik` network to get a public HTTPS hostname for the
-webhook and job callbacks.
+CI publishes the images and the Helm chart to GHCR on every `main` push and
+release (`.github/workflows/ci.yml`); it does **not** deploy. Roll the release
+out to your cluster with the chart — either `helm upgrade --install` (see
+[Deploy — Helm](#deploy--helm)) or a GitOps controller (Argo CD / Flux) tracking
+`oci://ghcr.io/hades-scheduler/charts/momos`.
 
 ## Running a job by hand
 
