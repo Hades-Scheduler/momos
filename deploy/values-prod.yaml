@@ -7,8 +7,12 @@
 #     --from-literal=MOMOS_TOKEN_SECRET="$(openssl rand -hex 32)" \
 #     --from-literal=HADES_AUTH_KEY=... \
 #     --from-literal=GH_WEBHOOK_SECRET=... \
-#     --from-literal=GH_TOKEN=... \
-#     --from-literal=LLM_API_KEY=...
+#     --from-literal=LLM_API_KEY=... \
+#     --from-literal=GH_APP_KEY="$(base64 -w0 < momos-app.private-key.pem)"
+#
+# (GH_APP_KEY is the base64 of the GitHub App .pem — base64 keeps it single-line
+# so it survives ${...} substitution. For the simpler PAT path instead, swap the
+# forge's `app:` block below for `token: ${GH_TOKEN}` and store GH_TOKEN.)
 #
 # The ${...} refs in `config` below are resolved by Momos at startup from those
 # env vars (injected from the Secret). EDIT the hosts marked EDIT ME.
@@ -38,7 +42,10 @@ config: |
       type: github
       api: https://api.github.com
       webhook_secret: ${GH_WEBHOOK_SECRET}
-      token: ${GH_TOKEN}
+      app:
+        app_id: 123456              # EDIT ME: GitHub App ID (App → General)
+        installation_id: 78901234   # EDIT ME: installation ID (from the install URL)
+        private_key: ${GH_APP_KEY}
   defaults:
     priority: 3
     timeout: 15m

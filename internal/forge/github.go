@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -231,7 +232,16 @@ func (g *GitHub) MintToken(ctx context.Context, repo string, scope token.Scope) 
 }
 
 func (g *GitHub) appJWT() (string, error) {
-	key, err := jwt.ParseRSAPrivateKeyFromPEM(g.app.privateKeyPEM)
+	keyPEM := g.app.privateKeyPEM
+	// Accept a base64-encoded PEM as well as a raw one. The base64 form is a
+	// single line, so it survives ${ENV} substitution into the inline YAML
+	// config; a raw multi-line PEM would not (plan.md §11.5).
+	if !bytes.Contains(keyPEM, []byte("-----BEGIN")) {
+		if decoded, derr := base64.StdEncoding.DecodeString(strings.TrimSpace(string(keyPEM))); derr == nil {
+			keyPEM = decoded
+		}
+	}
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(keyPEM)
 	if err != nil {
 		return "", fmt.Errorf("parse app private key: %w", err)
 	}
