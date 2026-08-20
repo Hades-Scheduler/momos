@@ -395,7 +395,7 @@ func (g *GitHub) PostSummary(ctx context.Context, repo string, pr int, marker, b
 
 // PostReview deletes any prior Momos inline comments (found by marker) then
 // posts a fresh COMMENT review, so inline comments do not stack across pushes.
-func (g *GitHub) PostReview(ctx context.Context, repo string, pr int, marker, body string, comments []InlineComment) error {
+func (g *GitHub) PostReview(ctx context.Context, repo string, pr int, marker, event, body string, comments []InlineComment) error {
 	// Remove prior Momos review comments.
 	var prior []ghComment
 	if err := g.do(ctx, http.MethodGet, fmt.Sprintf("/repos/%s/pulls/%d/comments?per_page=100", repo, pr), nil, &prior); err != nil {
@@ -406,7 +406,12 @@ func (g *GitHub) PostReview(ctx context.Context, repo string, pr int, marker, bo
 			_ = g.do(ctx, http.MethodDelete, fmt.Sprintf("/repos/%s/pulls/comments/%d", repo, c.ID), nil, nil)
 		}
 	}
-	if len(comments) == 0 {
+	if event == "" {
+		event = "COMMENT"
+	}
+	// A COMMENT review with nothing to say is a no-op; APPROVE/REQUEST_CHANGES
+	// must still be submitted so the verdict registers on the PR.
+	if len(comments) == 0 && event == "COMMENT" {
 		return nil
 	}
 	type rc struct {
@@ -427,9 +432,11 @@ func (g *GitHub) PostReview(ctx context.Context, repo string, pr int, marker, bo
 		})
 	}
 	payload := map[string]any{
-		"event":    "COMMENT",
-		"body":     body,
-		"comments": revComments,
+		"event": event,
+		"body":  body,
+	}
+	if len(revComments) > 0 {
+		payload["comments"] = revComments
 	}
 	return g.do(ctx, http.MethodPost, fmt.Sprintf("/repos/%s/pulls/%d/reviews", repo, pr), payload, nil)
 }

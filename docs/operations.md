@@ -27,6 +27,7 @@ substitution.
 | `forges[].webhook_secret` | HMAC secret for webhook verification |
 | `forges[].token` | PAT (simplest) — or configure `forges[].app` for installation tokens |
 | `defaults.*` | fallback policy; `reviewer.base_url`/`model` are the model knobs |
+| `defaults.publish.approvals` | opt-in: post the verdict as a real GitHub review (`APPROVE`/`REQUEST_CHANGES`). Off by default. Never auto-approves fork PRs or stale reviews; a `major`/`critical` finding forces `REQUEST_CHANGES`. Momos never merges. |
 | `defaults.limits` | `max_changed_files`, `max_diff_bytes`, `max_cost_usd` |
 | `repositories[]` | glob `match` + overrides + `triggers` |
 

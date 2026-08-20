@@ -108,8 +108,14 @@ type PublishConfig struct {
 	Mode           string `yaml:"mode"` // pr_review
 	InlineComments bool   `yaml:"inline_comments"`
 	CheckRun       bool   `yaml:"check_run"`
-	CPULimit       uint   `yaml:"cpu_limit"`
-	MemoryLimit    string `yaml:"memory_limit"`
+	// Approvals turns the model's advisory verdict into a real GitHub review
+	// event: APPROVE when clean, REQUEST_CHANGES when there are problems.
+	// Default off — this lets untrusted model output influence merge gating, so
+	// it is opt-in, and never auto-approves a fork PR or a stale review
+	// (plan.md §12.4).
+	Approvals   bool   `yaml:"approvals"`
+	CPULimit    uint   `yaml:"cpu_limit"`
+	MemoryLimit string `yaml:"memory_limit"`
 }
 
 // CloneConfig configures the clone step (reused git-container).

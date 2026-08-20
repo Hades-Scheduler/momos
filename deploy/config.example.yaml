@@ -51,6 +51,11 @@ defaults:
     mode: pr_review
     inline_comments: true
     check_run: true
+    # approvals: post the verdict as a real GitHub review (APPROVE when clean,
+    # REQUEST_CHANGES when there are problems). Opt-in: it lets model output
+    # influence merge gating. Never auto-approves fork PRs or stale reviews, and
+    # any major/critical finding forces REQUEST_CHANGES. Default off.
+    approvals: false
     cpu_limit: 500
     memory_limit: 512M
   fork_policy: summary_only

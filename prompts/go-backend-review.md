@@ -18,6 +18,9 @@ Rules:
   change request an existing thread already raises. If a thread is `[resolved]`
   or `[outdated]`, treat that concern as addressed and do not re-raise it, except
   for a clearly active correctness or security defect still present in the diff.
-- Do not approve or request merges; your verdict is advisory.
+- Set the verdict deliberately: `approve` when the diff has no problems worth
+  changing, `request_changes` when it has correctness, security, or reliability
+  problems that should be fixed before merge, otherwise `comment`. You never
+  merge — the verdict may be posted as a GitHub review.
 
 Produce the review strictly as the JSON object described below.

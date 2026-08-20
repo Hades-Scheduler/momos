@@ -40,3 +40,55 @@ func TestToInlineMapsFields(t *testing.T) {
 		t.Fatalf("inline comment must carry the Momos marker: %q", c.Body)
 	}
 }
+
+func rev(verdict review.Verdict, sev ...review.Severity) *review.Review {
+	r := &review.Review{Verdict: verdict}
+	for i, s := range sev {
+		r.Findings = append(r.Findings, review.Finding{File: "a.go", Line: i + 1, Severity: s, Message: "x"})
+	}
+	return r
+}
+
+func TestReviewEventOffIsAlwaysComment(t *testing.T) {
+	c := &Config{Approvals: false}
+	if got := c.reviewEvent(rev(review.VerdictApprove)); got != "COMMENT" {
+		t.Fatalf("approvals off must stay COMMENT, got %s", got)
+	}
+	if got := c.reviewEvent(rev(review.VerdictRequestChanges, review.SeverityCritical)); got != "COMMENT" {
+		t.Fatalf("approvals off must stay COMMENT, got %s", got)
+	}
+}
+
+func TestReviewEventVerdictMapping(t *testing.T) {
+	c := &Config{Approvals: true}
+	cases := []struct {
+		name string
+		rev  *review.Review
+		want string
+	}{
+		{"clean approve", rev(review.VerdictApprove), "APPROVE"},
+		{"approve with only minor findings", rev(review.VerdictApprove, review.SeverityMinor), "APPROVE"},
+		{"approve over a major finding is forced to request_changes",
+			rev(review.VerdictApprove, review.SeverityMajor), "REQUEST_CHANGES"},
+		{"explicit request_changes", rev(review.VerdictRequestChanges), "REQUEST_CHANGES"},
+		{"comment verdict, no blocking", rev(review.VerdictComment), "COMMENT"},
+		{"critical finding forces request_changes even on comment verdict",
+			rev(review.VerdictComment, review.SeverityCritical), "REQUEST_CHANGES"},
+	}
+	for _, tc := range cases {
+		if got := c.reviewEvent(tc.rev); got != tc.want {
+			t.Fatalf("%s: want %s, got %s", tc.name, tc.want, got)
+		}
+	}
+}
+
+func TestReviewEventNeverApprovesFork(t *testing.T) {
+	c := &Config{Approvals: true, IsFork: true}
+	if got := c.reviewEvent(rev(review.VerdictApprove)); got != "COMMENT" {
+		t.Fatalf("fork approve must downgrade to COMMENT, got %s", got)
+	}
+	// A fork with a blocking finding may still request changes (only blocks).
+	if got := c.reviewEvent(rev(review.VerdictApprove, review.SeverityMajor)); got != "REQUEST_CHANGES" {
+		t.Fatalf("fork blocking finding should REQUEST_CHANGES, got %s", got)
+	}
+}

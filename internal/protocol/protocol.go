@@ -69,6 +69,8 @@ const (
 	EnvPublishMode    = "PUBLISH_MODE"
 	EnvInlineComments = "INLINE_COMMENTS"
 	EnvCheckRun       = "CHECK_RUN"
+	EnvApprovals      = "APPROVALS" // "true" to submit APPROVE/REQUEST_CHANGES per verdict
+	EnvIsFork         = "IS_FORK"   // "true" for fork PRs — never auto-approved (plan.md §12.4)
 	EnvExpectedHead   = "EXPECTED_HEAD_SHA"
 	EnvPRNumber       = "PR_NUMBER"
 	EnvCallbackURL    = "MOMOS_CALLBACK_URL"

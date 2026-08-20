@@ -71,6 +71,10 @@ config: |
       mode: pr_review
       inline_comments: true
       check_run: true
+      # Post the verdict as a real GitHub review: APPROVE when clean,
+      # REQUEST_CHANGES when there are problems. Never auto-approves fork PRs or
+      # stale reviews; any major/critical finding forces REQUEST_CHANGES.
+      approvals: true
     fork_policy: summary_only
   repositories:
     - match: "Hades-Scheduler/*"                   # EDIT ME: repos to review

@@ -78,8 +78,12 @@ These are load-bearing decisions from `plan.md` §§10–12. Tests guard several
 4. **The clone step fetches BOTH base and head** so `git diff base...head` works,
    including fork PRs via `refs/pull/N/head` (§12.2). Do not assume a single-branch
    clone is enough.
-5. **`review.json` is untrusted output.** The publisher sanitizes it and never
-   self-approves/merges (§12.4). Keep `sanitize()` on every model-provided string.
+5. **`review.json` is untrusted output.** The publisher sanitizes it and **never
+   merges** (§12.4). Keep `sanitize()` on every model-provided string. Posting the
+   verdict as a real review (`APPROVE`/`REQUEST_CHANGES`) is opt-in via
+   `publish.approvals`; even then it never auto-approves a fork or stale review,
+   and a `major`/`critical` finding forces `REQUEST_CHANGES`
+   (`publisher.reviewEvent`).
 6. **Structured JSON is not server-guaranteed.** Always parse with
    `review.Parse` (repair + validate + one retry), never assume the endpoint
    enforced the schema (§11.1).

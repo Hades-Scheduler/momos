@@ -30,6 +30,8 @@ type Config struct {
 	Mode          string
 	Inline        bool
 	CheckRun      bool
+	Approvals     bool
+	IsFork        bool
 	ExpectedHead  string
 	RepoID        string
 	PRNumber      int
@@ -47,6 +49,8 @@ func FromEnv() *Config {
 		Mode:          os.Getenv(protocol.EnvPublishMode),
 		Inline:        os.Getenv(protocol.EnvInlineComments) == "true",
 		CheckRun:      os.Getenv(protocol.EnvCheckRun) == "true",
+		Approvals:     os.Getenv(protocol.EnvApprovals) == "true",
+		IsFork:        os.Getenv(protocol.EnvIsFork) == "true",
 		ExpectedHead:  os.Getenv(protocol.EnvExpectedHead),
 		RepoID:        os.Getenv(protocol.EnvRepoID),
 		PRNumber:      atoi(os.Getenv(protocol.EnvPRNumber)),
@@ -91,12 +95,22 @@ func (c *Config) Run(ctx context.Context) error {
 	status := event.StatusSucceeded
 	if stale {
 		status = event.StatusStale
-	} else if c.Inline && len(rev.Findings) > 0 {
-		inline := toInline(rev.Findings)
-		reviewBody := c.marker() + "\nMomos automated review"
-		if perr := f.PostReview(ctx, c.RepoID, c.PRNumber, c.marker(), reviewBody, inline); perr != nil {
-			// Inline failed but summary succeeded; still report success of the summary.
-			status = event.StatusSucceeded
+	} else {
+		var inline []forge.InlineComment
+		if c.Inline && len(rev.Findings) > 0 {
+			inline = toInline(rev.Findings)
+		}
+		reviewEvent := c.reviewEvent(rev)
+		// Submit a review when there is a verdict to register (APPROVE /
+		// REQUEST_CHANGES) or inline comments to attach; a bare COMMENT with no
+		// comments is a no-op the summary already covers.
+		if reviewEvent != "COMMENT" || len(inline) > 0 {
+			reviewBody := c.marker() + "\nMomos automated review"
+			if perr := f.PostReview(ctx, c.RepoID, c.PRNumber, c.marker(), reviewEvent, reviewBody, inline); perr != nil {
+				// The review failed but the summary succeeded; still report the
+				// summary as the result.
+				status = event.StatusSucceeded
+			}
 		}
 	}
 
@@ -133,6 +147,44 @@ func (c *Config) buildSummary(rev *review.Review, stale bool) string {
 	}
 	b.WriteString("\n" + sanitize(rev.Summary) + "\n")
 	return b.String()
+}
+
+// reviewEvent turns the model's advisory verdict into a GitHub review event,
+// applying safety guardrails (plan.md §12.4). When Approvals is off it always
+// returns "COMMENT" (the verdict stays advisory, shown only in the summary).
+// It never auto-approves a fork PR (untrusted diff → prompt-injection risk), and
+// any major/critical finding forces REQUEST_CHANGES regardless of the stated
+// verdict, so a model can't approve over its own blocking findings. Momos still
+// never merges — approval only satisfies branch protection if the repo requires
+// it.
+func (c *Config) reviewEvent(rev *review.Review) string {
+	if !c.Approvals {
+		return "COMMENT"
+	}
+	if hasBlocking(rev) {
+		return "REQUEST_CHANGES"
+	}
+	switch rev.Verdict {
+	case review.VerdictApprove:
+		if c.IsFork {
+			return "COMMENT" // never auto-approve untrusted fork content
+		}
+		return "APPROVE"
+	case review.VerdictRequestChanges:
+		return "REQUEST_CHANGES"
+	default:
+		return "COMMENT"
+	}
+}
+
+// hasBlocking reports whether any finding is severe enough to block a merge.
+func hasBlocking(rev *review.Review) bool {
+	for _, f := range rev.Findings {
+		if f.Severity == review.SeverityMajor || f.Severity == review.SeverityCritical {
+			return true
+		}
+	}
+	return false
 }
 
 func toInline(findings []review.Finding) []forge.InlineComment {

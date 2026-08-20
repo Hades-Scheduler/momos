@@ -145,6 +145,8 @@ func publishStep(in Inputs) hades.Step {
 		protocol.EnvPublishMode:    orDefault(p.Mode, "pr_review"),
 		protocol.EnvInlineComments: strconv.FormatBool(p.InlineComments),
 		protocol.EnvCheckRun:       strconv.FormatBool(p.CheckRun),
+		protocol.EnvApprovals:      strconv.FormatBool(p.Approvals),
+		protocol.EnvIsFork:         strconv.FormatBool(ev.IsFork),
 		protocol.EnvExpectedHead:   ev.HeadSHA,
 		protocol.EnvRepoID:         ev.RepoID,
 		protocol.EnvPRNumber:       strconv.Itoa(ev.PRNumber),

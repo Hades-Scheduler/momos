@@ -72,9 +72,11 @@ type Forge interface {
 	// plan.md §11.7). Returns the comment URL.
 	PostSummary(ctx context.Context, repo string, pr int, marker, body string) (string, error)
 
-	// PostReview posts an inline review, dismissing/removing any prior Momos
-	// review (found by marker) first so comments don't stack on re-runs.
-	PostReview(ctx context.Context, repo string, pr int, marker, body string, comments []InlineComment) error
+	// PostReview posts a review with the given event ("COMMENT", "APPROVE", or
+	// "REQUEST_CHANGES"), dismissing/removing any prior Momos review (found by
+	// marker) first so comments don't stack on re-runs. A non-COMMENT event is
+	// submitted even with no inline comments so the verdict registers.
+	PostReview(ctx context.Context, repo string, pr int, marker, event, body string, comments []InlineComment) error
 
 	// PostCheckRun creates a completed check run carrying the verdict + cost.
 	PostCheckRun(ctx context.Context, repo, headSHA, name, conclusion, title, summary string) error
