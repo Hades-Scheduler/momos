@@ -57,12 +57,15 @@ config: |
     clone:   { image: ghcr.io/hades-scheduler/momos-clone:latest }
     reviewer:
       image: ghcr.io/hades-scheduler/momos-reviewer:latest
-      base_url: https://api.openai.com/v1
-      model: gpt-4o
+      # AET internal OpenAI-compatible gateway (self-hosted Qwen); the
+      # LLM_API_KEY is a logos gateway key, not an OpenAI sk- key.
+      base_url: https://logos.aet.cit.tum.de/v1
+      model: Qwen/Qwen3.8-27B
       api_key: ${LLM_API_KEY}
       max_output_tokens: 8000
-      input_price_per_mtok: 2.50
-      output_price_per_mtok: 10.00
+      # Self-hosted gateway: no per-token billing, so cost limits never abort.
+      input_price_per_mtok: 0.00
+      output_price_per_mtok: 0.00
     publish:
       image: ghcr.io/hades-scheduler/momos-publisher:latest
       mode: pr_review
