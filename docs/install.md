@@ -23,11 +23,16 @@ Either way you finish with the same [webhook](#register-the-github-webhook) and
   make sure they are **accessible to Hades** (the packages are public, or the
   Hades Docker daemon / cluster is logged in to GHCR).
 - A **GitHub repository** you own, with a branch you can open a PR from.
-- A **GitHub token** for that repo:
-  - Fine-grained PAT: *Contents: Read*, *Pull requests: Read and write*,
-    *Checks: Read and write*, *Metadata: Read*.
-  - Or a classic PAT with the `repo` scope.
-- An **OpenAI API key** (`sk-...`).
+- **GitHub credentials** for that repo - a PAT (quickest) or a GitHub App
+  (production). See [Set up GitHub credentials](#set-up-github-credentials); the
+  App path has one common trap (the private key is **not** the client secret)
+  spelled out there.
+- An **LLM endpoint and key**. Any OpenAI-compatible API works: OpenAI, a
+  self-hosted server (Ollama, vLLM), or an org gateway. **The `base_url` must
+  match the key** - an OpenAI `sk-...` key goes with `https://api.openai.com/v1`,
+  a gateway key goes with that gateway's URL. A mismatched pair fails with
+  `401 Incorrect API key`. [Test it in one command](#the-model-endpoint) before
+  you open a PR.
 - A way to reach Momos from **GitHub and the Hades job containers**: a tunnel
   ([`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/),
   `ngrok`, `smee.io`) for Option A, or an ingress hostname for Option B.
@@ -36,6 +41,58 @@ Either way you finish with the same [webhook](#register-the-github-webhook) and
 > `momos-*` packages public (package → *Package settings* → *Change visibility*),
 > or provide pull credentials (a Docker login for Hades' daemon; an
 > `imagePullSecret` for the Momos service on Kubernetes — see Option B).
+
+---
+
+## Set up GitHub credentials
+
+Momos needs to (1) read the repo so the clone step can fetch it and (2) write the
+review back. Pick **one** of these.
+
+### Quick: a Personal Access Token (PAT)
+
+A fine-grained PAT on the repo with **Contents: Read**, **Pull requests: Read and
+write**, **Checks: Read and write**, **Metadata: Read** (or a classic PAT with the
+`repo` scope). You will use it as `GH_TOKEN` and the forge's `token:` field. Good
+for a trial.
+
+### Production: a GitHub App
+
+An App mints short-lived, per-run tokens instead of a long-lived PAT. Set it up
+once - the numbered fields map directly to the config:
+
+1. **Create the App** - *Settings → Developer settings → GitHub Apps → New*.
+   - **Webhook → Secret:** a random string. This becomes your `GH_WEBHOOK_SECRET`.
+   - **Repository permissions:** *Contents: Read-only*, *Pull requests: Read and
+     write*, *Checks: Read and write*, *Metadata: Read-only*.
+   - **Subscribe to events:** *Pull request*.
+2. **App ID** (`app_id`) - shown on the App's *General* page, a number like
+   `4660487`.
+3. **Private key** (`private_key` / `GH_APP_KEY`) - on *General*, click
+   **Generate a private key**. This downloads a **`.pem` file**.
+
+   > ⚠️ **The `.pem` is the App key - not the "Client secret".** The client secret
+   > shown when you create the App is a *different* credential and will **not**
+   > work here (it fails App auth). If all you saved is a short client-secret
+   > string, come back to *General* and *Generate a private key* to get the
+   > `.pem`.
+
+4. **Install the App** (`installation_id`) - *Install App* → choose the repo (or
+   the whole org). After installing, the browser URL ends in
+   `.../installations/<number>` - that number is your `installation_id`.
+
+Pass the `.pem` to Momos **base64-encoded on a single line**, so it survives
+`${ENV}` substitution and inline YAML (a multi-line PEM would break both):
+
+```bash
+# Linux:
+base64 -w0 < momos-app.private-key.pem
+# macOS:
+base64 -i momos-app.private-key.pem | tr -d '\n'
+```
+
+Use that one-line string as `GH_APP_KEY`, and the forge's `app:` block (shown in
+Option B) instead of `token:`.
 
 ---
 
@@ -170,6 +227,26 @@ prompts:
 > container env vars). Keep real secrets out of source control — use
 > `--set-string secrets.X=...` or `existingSecret:` instead of inlining.
 
+> **`MOMOS_TOKEN_SECRET` must be non-empty.** Momos refuses to start without it
+> (`MOMOS_TOKEN_SECRET is required`, then CrashLoopBackOff). Generate it once with
+> `openssl rand -hex 32` and keep it stable across restarts.
+
+> **Using a GitHub App instead of a PAT?** Replace the forge's `token:` line with
+> the `app:` block, and set `GH_APP_KEY` (the one-line base64 `.pem` from
+> [above](#production-a-github-app)) in `secrets:` instead of `GH_TOKEN`:
+>
+> ```yaml
+>   forges:
+>     - id: github-main
+>       type: github
+>       api: https://api.github.com
+>       webhook_secret: ${GH_WEBHOOK_SECRET}
+>       app:
+>         app_id: <your app id>
+>         installation_id: <your installation id>
+>         private_key: ${GH_APP_KEY}
+> ```
+
 ### B2. Install
 
 ```bash
@@ -196,16 +273,22 @@ Your public URL is `https://momos.example.com` (the ingress host). Continue belo
 
 ## Register the GitHub webhook
 
-On the repo: **Settings → Webhooks → Add webhook**.
+**Where the webhook lives depends on your credential:**
 
-- **Payload URL:** `<your public URL>/hooks/github`
-- **Content type:** `application/json`
-- **Secret:** the same value as `GH_WEBHOOK_SECRET`
-- **Events:** *Let me select individual events* → **Pull requests** only.
+- **GitHub App:** the App *is* the webhook. In the App's settings set
+  **Webhook → Active**, **Payload URL** `<your public URL>/hooks/github`, and the
+  **Secret** you chose as `GH_WEBHOOK_SECRET`. Events come from the App's
+  *Pull request* subscription - no per-repo webhook needed. Done here.
+- **PAT:** add a repo (or org) webhook manually - **Settings → Webhooks → Add
+  webhook**:
+  - **Payload URL:** `<your public URL>/hooks/github`
+  - **Content type:** `application/json`
+  - **Secret:** the same value as `GH_WEBHOOK_SECRET`
+  - **Events:** *Let me select individual events* → **Pull requests** only.
 
 GitHub sends a `ping`; Momos answers `202` and ignores it — that's expected. For
-an **org-wide** install, add the webhook at the org level and use an org glob
-(`<owner>/*`) in the config.
+an **org-wide** install, install the App on (or add the webhook at) the org level
+and use an org glob (`<owner>/*`) in the config's `repositories` match.
 
 ---
 
@@ -222,19 +305,40 @@ curl -s <public-url>/metrics | grep momos_    # counters
 
 ---
 
-## Using a self-hosted model (optional)
+## The model endpoint
 
-Point the reviewer at any OpenAI-compatible endpoint — same code, no data leaves
-your network:
+Point the reviewer at any OpenAI-compatible endpoint via `reviewer.base_url` +
+`reviewer.model` - OpenAI, a self-hosted server, or an org gateway. Same code, and
+no data leaves that endpoint's network.
 
 ```yaml
     reviewer:
-      base_url: http://ollama.internal:11434/v1
+      base_url: http://ollama.internal:11434/v1   # or an org gateway, or OpenAI
       model: qwen2.5-coder:7b
 ```
 
+**Test the endpoint before you open a PR.** This catches a wrong key, URL, or
+model name in seconds, instead of discovering it from a failed review:
+
+```bash
+curl -s <base_url>/chat/completions \
+  -H "Authorization: Bearer <LLM_API_KEY>" -H 'Content-Type: application/json' \
+  -d '{"model":"<model>","max_tokens":16,"messages":[{"role":"user","content":"say ok"}]}' \
+  | jq '.choices[0].message.content // .error'
+```
+
+- A **200** with a short reply means the key + URL + model triple is good.
+- **`401 Incorrect API key`** almost always means the key belongs to a *different*
+  provider than `base_url` points at (e.g. a gateway key sent to
+  `api.openai.com`). Point `base_url` at the endpoint that issued the key.
+- **`404` / "model not found"** means the `model` name is wrong for that endpoint;
+  list valid names with `curl -s <base_url>/models -H "Authorization: Bearer <key>"`.
+
 `api_key` can be any non-empty string for local servers. The **agentic** strategy
-needs a tool-calling-capable model; `oneshot` works anywhere.
+needs a tool-calling-capable model; `oneshot` works anywhere. For a self-hosted
+gateway with no per-token billing, set `input_price_per_mtok` and
+`output_price_per_mtok` to `0` so `max_cost_usd` never aborts a review on a
+phantom cost.
 
 ---
 
@@ -242,11 +346,14 @@ needs a tool-calling-capable model; `oneshot` works anywhere.
 
 | Symptom | Fix |
 |---|---|
+| Momos pod **crashes at start** with `MOMOS_TOKEN_SECRET is required` | The secret is empty. Set a non-empty `MOMOS_TOKEN_SECRET` (`openssl rand -hex 32`) and keep it stable across restarts. |
 | Job fails at **clone** with an image-pull error | Hades can't pull `ghcr.io/hades-scheduler/momos-*`. Make the packages public, or log the Hades host into GHCR. |
 | Momos pod stuck **ImagePullBackOff** | The service image is private — set `imagePullSecrets` in the values, or make the package public. |
 | Webhook shows **red** in GitHub's *Recent Deliveries* | Wrong URL/secret or Momos unreachable. Path is `/hooks/github`; secret must match `GH_WEBHOOK_SECRET`. |
+| App auth fails / `could not parse private key` | You set the **client secret** as `GH_APP_KEY`. Generate a **private key** `.pem` on the App's *General* page and pass it base64-encoded ([details](#production-a-github-app)). |
 | **No comment** but the job succeeded | Token scopes (Pull requests + Checks write), or the repo `match:` doesn't cover this repo. |
-| Review step returns a **400 from the model** | Model/endpoint mismatch. Try `gpt-4o` on OpenAI first. |
+| Review step: **`401 Incorrect API key`** from the model | The key doesn't match `base_url` (e.g. a gateway key against `api.openai.com`). Point `base_url` at the key's provider; [test it](#the-model-endpoint). |
+| Review step returns a **400/404 from the model** | Wrong `model` name for the endpoint, or the provider needs a different param. List models with `curl <base_url>/models`; [test the endpoint](#the-model-endpoint). |
 | Run stays **`submitted`** in `/v1/runs` | Callback didn't reach Momos — confirm `external_url` is the public URL and it's reachable from the job containers. The reconciler times it out after `defaults.timeout`. |
 
 More detail: [operations.md](operations.md). Architecture: [architecture.md](architecture.md).

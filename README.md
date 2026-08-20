@@ -36,8 +36,9 @@ reporter*: it runs even if the review failed, and always reports back. See
 > Full step-by-step walkthrough: [`docs/install.md`](docs/install.md).
 
 Prerequisites: a running Hades (Docker executor) that can pull from GHCR, Docker,
-a GitHub repo you own, and an OpenAI API key. Hades pulls the step images from
-`ghcr.io/hades-scheduler/momos-*` — nothing to build.
+a GitHub repo you own, and a key for any OpenAI-compatible LLM endpoint (OpenAI, a
+self-hosted server, or an org gateway - the `base_url` must match the key). Hades
+pulls the step images from `ghcr.io/hades-scheduler/momos-*` — nothing to build.
 
 1. Point Momos at your repo in the `repositories:` block of
    `deploy/config.example.yaml`.
