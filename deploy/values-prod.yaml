@@ -15,6 +15,11 @@ existingSecret: momos-secrets
 image:
   pullPolicy: Always   # so a redeployed :latest is re-pulled
 
+# Run store on an emptyDir for now (no PVC dependency). For a durable run store,
+# set enabled: true and a storageClass your cluster provides.
+persistence:
+  enabled: false
+
 ingress:
   enabled: true
   className: nginx
