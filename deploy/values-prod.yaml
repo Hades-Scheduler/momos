@@ -23,20 +23,25 @@ image:
 
 ingress:
   enabled: true
-  className: nginx                 # EDIT ME: your ingress class
-  host: momos.example.com          # EDIT ME: Momos public hostname (= external_url below)
-  # tls:
-  #   - hosts: [momos.example.com]
-  #     secretName: momos-tls
+  className: nginx
+  host: momos.student.k8s.aet.cit.tum.de
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    - hosts: [momos.student.k8s.aet.cit.tum.de]
+      secretName: momos-tls
 
 config: |
   hades:
-    url: http://hades-api.hades.svc:8080          # EDIT ME: in-cluster Hades API
+    url: https://hades.student.k8s.aet.cit.tum.de
     auth_key: ${HADES_AUTH_KEY}
-    log_manager_url: http://hades-logmanager.hades.svc:8081
+    # LogManager is not publicly exposed; leave empty (the callback is the
+    # primary result path, the reconciler falls back to the timeout). Set an
+    # in-cluster service URL here if you want status reconciliation.
+    log_manager_url: ""
   server:
     addr: ":8080"
-    external_url: https://momos.example.com       # EDIT ME: must equal ingress.host
+    external_url: https://momos.student.k8s.aet.cit.tum.de
   forges:
     - id: github-main
       type: github
