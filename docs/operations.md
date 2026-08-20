@@ -82,15 +82,14 @@ The `deploy` job in `.github/workflows/ci.yml` runs `helm upgrade --install`
 against the cluster on every `main` push, release, and `workflow_dispatch`
 (never on PRs). One-time setup:
 
-1. A **`production` environment** on the repo with a single secret **`KUBECONFIG`**
-   — base64-encoded kubeconfig scoped to the `momos` namespace
-   (`base64 -w0 < kubeconfig`).
-2. An in-cluster **Secret `momos-secrets`** in the `momos` namespace holding
-   `MOMOS_TOKEN_SECRET`, `HADES_AUTH_KEY`, `GH_WEBHOOK_SECRET`, `GH_TOKEN`,
-   `LLM_API_KEY` (referenced via `existingSecret` — the chart creates no Secret
-   itself, so nothing sensitive lives in the repo or in Actions).
-3. Edit the non-secret bits in **`deploy/values-prod.yaml`** (ingress host,
-   Hades service URLs, `external_url`, repo match).
+1. A **`production` environment** on the repo holding all secrets:
+   `KUBECONFIG` (base64 kubeconfig scoped to the `momos` namespace),
+   `MOMOS_TOKEN_SECRET`, `HADES_AUTH_KEY`, `GH_WEBHOOK_SECRET`, `LLM_API_KEY`,
+   and `GH_APP_KEY` (the GitHub App `.pem`; PAT path uses `GH_TOKEN` instead).
+   The deploy job syncs these into an in-cluster `momos-secrets` Secret that the
+   chart references via `existingSecret` — nothing sensitive lives in the repo.
+2. Edit the non-secret bits in **`deploy/values-prod.yaml`** (ingress host,
+   Hades URL, `external_url`, repo match, App `app_id`/`installation_id`).
 
 The job pins `image.tag` to the release tag on releases and `latest` on `main`,
 then `kubectl rollout restart`s to re-pull a moving `latest`.

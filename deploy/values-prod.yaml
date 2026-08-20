@@ -1,18 +1,12 @@
 # Production Helm values used by the CI `deploy` job (helm upgrade --install).
-# NON-SECRET only. The app secrets live in a Kubernetes Secret you create once
-# in the momos namespace and reference via existingSecret:
+# NON-SECRET only. The app secrets live in the repo's `production` GitHub
+# environment; the deploy job syncs them into the in-cluster `momos-secrets`
+# Secret, which the chart references via existingSecret. Required environment
+# secrets: MOMOS_TOKEN_SECRET, HADES_AUTH_KEY, GH_WEBHOOK_SECRET, LLM_API_KEY,
+# GH_APP_KEY (the App .pem, raw or base64), plus KUBECONFIG.
 #
-#   kubectl create namespace momos
-#   kubectl -n momos create secret generic momos-secrets \
-#     --from-literal=MOMOS_TOKEN_SECRET="$(openssl rand -hex 32)" \
-#     --from-literal=HADES_AUTH_KEY=... \
-#     --from-literal=GH_WEBHOOK_SECRET=... \
-#     --from-literal=LLM_API_KEY=... \
-#     --from-literal=GH_APP_KEY="$(base64 -w0 < momos-app.private-key.pem)"
-#
-# (GH_APP_KEY is the base64 of the GitHub App .pem — base64 keeps it single-line
-# so it survives ${...} substitution. For the simpler PAT path instead, swap the
-# forge's `app:` block below for `token: ${GH_TOKEN}` and store GH_TOKEN.)
+# (For the simpler PAT path instead, swap the forge's `app:` block below for
+# `token: ${GH_TOKEN}` and add a GH_TOKEN environment secret + sync line.)
 #
 # The ${...} refs in `config` below are resolved by Momos at startup from those
 # env vars (injected from the Secret). EDIT the hosts marked EDIT ME.
