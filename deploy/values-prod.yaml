@@ -48,8 +48,8 @@ config: |
       api: https://api.github.com
       webhook_secret: ${GH_WEBHOOK_SECRET}
       app:
-        app_id: 123456              # EDIT ME: GitHub App ID (App → General)
-        installation_id: 78901234   # EDIT ME: installation ID (from the install URL)
+        app_id: 4660487
+        installation_id: 155194443
         private_key: ${GH_APP_KEY}
   defaults:
     priority: 3
