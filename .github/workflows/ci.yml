@@ -229,12 +229,3 @@ jobs:
           # Force a re-pull of a moving :latest tag (a no-op for unique release tags).
           kubectl -n momos rollout restart deploy/momos-momos
           kubectl -n momos rollout status  deploy/momos-momos --timeout=180s
-
-      - name: Diagnostics on failure
-        if: failure()
-        run: |
-          echo "=== pods ==="; kubectl -n momos get pods -o wide || true
-          echo "=== pvc ===";  kubectl -n momos get pvc || true
-          echo "=== events ==="; kubectl -n momos get events --sort-by=.lastTimestamp | tail -30 || true
-          echo "=== describe pod ==="; kubectl -n momos describe pods -l app.kubernetes.io/name=momos | tail -60 || true
-          echo "=== logs ==="; kubectl -n momos logs -l app.kubernetes.io/name=momos --tail=100 --all-containers || true
