@@ -539,6 +539,15 @@ Define a **thin `Forge` interface now, GitHub as the sole implementation**, as s
 - **First light:** a throwaway repo you own on **github.com** + **real Anthropic** via its OpenAI-compat endpoint (`claude-sonnet-4-5` class, pennies per PR) + the existing Hades Docker-compose stack. **Local-model support is built from the start** (the OpenAI-compatible client makes it a config swap), even though first light uses Anthropic.
 - **M0 = option (b):** three hand-written-payload steps + one real PR comment **and** a callback to a ~50-line Go Momos stub (`POST /v1/runs/{id}/result` + trivial run store), PAT-embedded tokens, on the local Hades. Definition of done: PR event → hand-crafted 3-step payload → `POST /build` → **comment appears on the PR** *and* **the stub run store shows a completed run with the parsed `review.json`** (proves the callback-reachability unknown early). Milestones are otherwise soft - the full system gets built regardless.
 
+### 11.10 Existing-thread awareness (no duplicate change requests)
+
+The reviewer must not re-raise a change request an existing PR thread already covers, and must respect a thread a human has **resolved** or that has gone **outdated**. Because the review step holds no forge token (§11.4), the **service** fetches existing threads and passes them to the review step as *data* - the reviewer stays token-free.
+
+- **Fetch (service, best-effort):** on a PR event, after minting the publish token, the service calls `Forge.ListReviewThreads` via **GraphQL** (REST does not expose `isResolved`/`isOutdated`), reusing the publish token (write ⊇ `pull_requests:read`), under a **5s** child timeout. Any error → continue with no threads; never fail the review. `PolicyHash` is unchanged - threads are dynamic repo state, like the diff.
+- **Self-suppression guard:** at submission the PR still shows Momos's *own* prior inline comments. If those drove dedup, the model would drop a finding it raised last run, which the publisher then dismisses - erasing an unfixed issue. So the publisher tags every inline comment with an invisible marker (`forge.MomosInlineMarker`), and the service **filters Momos-authored threads out** before serializing. Only human threads drive dedup.
+- **Delivery:** filtered threads are rendered with caps (≤50 threads, ≤20 comments each, 500-char bodies, 64KB total) and passed base64 in the review-step var `EXISTING_THREADS_B64`. The reviewer wraps them in `<existing_review_threads>` delimiters in **both** oneshot and agentic contexts.
+- **Prompt rules (untrusted data):** the block is untrusted user text, the diff is the source of truth; do not duplicate an open thread's request; a `[resolved]`/`[outdated]` thread means the concern is addressed and is not re-raised - **except** a clearly active correctness or security defect still present in the diff, so a resolve can't bury a real bug.
+
 ---
 
 ## 12. Review Corrections & Hardening (agy pass, 2026-08-17)

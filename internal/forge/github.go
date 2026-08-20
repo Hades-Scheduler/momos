@@ -269,6 +269,96 @@ func (g *GitHub) CurrentHead(ctx context.Context, repo string, pr int) (string, 
 	return out.Head.SHA, nil
 }
 
+// ListReviewThreads reads existing PR review threads via the GraphQL API. REST
+// does not expose isResolved/isOutdated, which are exactly the flags we need to
+// respect a human's resolution, so GraphQL is required here.
+func (g *GitHub) ListReviewThreads(ctx context.Context, repo string, pr int, authToken string) ([]ReviewThread, error) {
+	const query = `query($owner:String!,$name:String!,$pr:Int!){repository(owner:$owner,name:$name){pullRequest(number:$pr){reviewThreads(first:100){nodes{isResolved isOutdated path line comments(first:20){nodes{body author{login}}}}}}}}`
+	reqBody, _ := json.Marshal(map[string]any{
+		"query":     query,
+		"variables": map[string]any{"owner": repoOwner(repo), "name": repoName(repo), "pr": pr},
+	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.graphqlEndpoint(), bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+authToken)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "momos") // GitHub GraphQL rejects requests without one.
+	resp, err := g.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("list review threads: %w", err)
+	}
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+	if resp.StatusCode/100 != 2 {
+		return nil, fmt.Errorf("list review threads: status %d: %s", resp.StatusCode, string(data))
+	}
+	return parseReviewThreads(data)
+}
+
+// parseReviewThreads decodes the GraphQL reviewThreads response. author and line
+// are nullable (deleted user / outdated thread), so both are pointers.
+func parseReviewThreads(data []byte) ([]ReviewThread, error) {
+	var out struct {
+		Data struct {
+			Repository struct {
+				PullRequest struct {
+					ReviewThreads struct {
+						Nodes []struct {
+							IsResolved bool   `json:"isResolved"`
+							IsOutdated bool   `json:"isOutdated"`
+							Path       string `json:"path"`
+							Line       *int   `json:"line"`
+							Comments   struct {
+								Nodes []struct {
+									Body   string `json:"body"`
+									Author *struct {
+										Login string `json:"login"`
+									} `json:"author"`
+								} `json:"nodes"`
+							} `json:"comments"`
+						} `json:"nodes"`
+					} `json:"reviewThreads"`
+				} `json:"pullRequest"`
+			} `json:"repository"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, fmt.Errorf("decode review threads: %w", err)
+	}
+	if len(out.Errors) > 0 {
+		return nil, fmt.Errorf("graphql error: %s", out.Errors[0].Message)
+	}
+	nodes := out.Data.Repository.PullRequest.ReviewThreads.Nodes
+	threads := make([]ReviewThread, 0, len(nodes))
+	for _, n := range nodes {
+		t := ReviewThread{Path: n.Path, Line: n.Line, IsResolved: n.IsResolved, IsOutdated: n.IsOutdated}
+		for _, c := range n.Comments.Nodes {
+			author := "unknown"
+			if c.Author != nil && c.Author.Login != "" {
+				author = c.Author.Login
+			}
+			t.Comments = append(t.Comments, ThreadComment{Author: author, Body: c.Body})
+		}
+		threads = append(threads, t)
+	}
+	return threads, nil
+}
+
+// graphqlEndpoint derives the GraphQL URL from the REST apiBase. GitHub.com uses
+// <base>/graphql; GHES exposes it at .../api/graphql rather than .../api/v3.
+func (g *GitHub) graphqlEndpoint() string {
+	if strings.HasSuffix(g.apiBase, "/api/v3") {
+		return strings.TrimSuffix(g.apiBase, "/api/v3") + "/api/graphql"
+	}
+	return g.apiBase + "/graphql"
+}
+
 type ghComment struct {
 	ID   int64  `json:"id"`
 	Body string `json:"body"`
@@ -402,6 +492,13 @@ func (g *GitHub) do(ctx context.Context, method, path string, in, out any) error
 func repoName(repo string) string {
 	if i := strings.LastIndex(repo, "/"); i >= 0 {
 		return repo[i+1:]
+	}
+	return repo
+}
+
+func repoOwner(repo string) string {
+	if i := strings.Index(repo, "/"); i >= 0 {
+		return repo[:i]
 	}
 	return repo
 }

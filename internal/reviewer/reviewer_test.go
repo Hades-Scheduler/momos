@@ -2,8 +2,10 @@ package reviewer
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Hades-Scheduler/momos/internal/diff"
@@ -60,6 +62,41 @@ func TestClassifySplitsByDiff(t *testing.T) {
 	}
 	if !contains(summary, "context line") || !contains(summary, "not in diff") {
 		t.Fatalf("out-of-diff findings not folded into summary: %q", summary)
+	}
+}
+
+func TestThreadsBlockInjectedIntoOneshot(t *testing.T) {
+	var gotBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":` +
+			jsonString(`{"verdict":"comment","summary":"ok","findings":[]}`) +
+			`}}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`))
+	}))
+	defer srv.Close()
+
+	c := &Config{Model: "test", MaxOutputTokens: 100,
+		ExistingThreads: "- thread on a.go:1 [resolved]\n    alice: fixed"}
+	if _, _, err := c.oneshot(context.Background(), llm.New(srv.URL, ""), "diff"); err != nil {
+		t.Fatalf("oneshot: %v", err)
+	}
+	// Angle brackets are <-escaped inside the JSON request body.
+	if !strings.Contains(gotBody, "existing_review_threads") {
+		t.Fatalf("threads block not sent to the model:\n%s", gotBody)
+	}
+	if !strings.Contains(gotBody, "a.go:1 [resolved]") {
+		t.Fatalf("thread content missing from the request:\n%s", gotBody)
+	}
+}
+
+func TestThreadsBlockEmptyWhenNone(t *testing.T) {
+	if (&Config{}).threadsBlock() != "" {
+		t.Fatal("no threads should produce an empty block")
+	}
+	if decodeB64("not valid base64!!") != "" {
+		t.Fatal("malformed base64 should decode to empty, not panic")
 	}
 }
 

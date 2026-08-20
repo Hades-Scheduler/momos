@@ -28,6 +28,11 @@ type Inputs struct {
 	PromptText    string
 	PromptVersion string
 
+	// ExistingThreads is the rendered block of existing (human) PR review
+	// threads, so the reviewer avoids duplicating open change requests and
+	// respects resolved ones. Data, not a credential — kept out of PolicyHash.
+	ExistingThreads string
+
 	// Tokens embedded at submission (M0 embed mode, plan.md §11.5). CloneToken
 	// is contents:read; PublishToken is pull_requests:write + checks:write.
 	CloneToken   string
@@ -114,6 +119,9 @@ func reviewStep(in Inputs) hades.Step {
 		protocol.EnvBaseSHA:         ev.BaseSHA,
 		protocol.EnvHeadSHA2:        ev.HeadSHA,
 		protocol.EnvRepoID:          ev.RepoID,
+	}
+	if in.ExistingThreads != "" {
+		meta[protocol.EnvExistingThreadsB64] = base64.StdEncoding.EncodeToString([]byte(in.ExistingThreads))
 	}
 	return hades.Step{
 		ID:              2,

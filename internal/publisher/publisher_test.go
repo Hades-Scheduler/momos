@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Hades-Scheduler/momos/internal/forge"
 	"github.com/Hades-Scheduler/momos/internal/review"
 )
 
@@ -32,5 +33,10 @@ func TestToInlineMapsFields(t *testing.T) {
 	}
 	if !strings.Contains(c.Body, "bug") || !strings.Contains(c.Body, "fix it") {
 		t.Fatalf("body missing content: %q", c.Body)
+	}
+	// Every inline comment carries the invisible marker so a later run can
+	// recognize and drop Momos's own threads before feeding the reviewer.
+	if !strings.Contains(c.Body, forge.MomosInlineMarker) {
+		t.Fatalf("inline comment must carry the Momos marker: %q", c.Body)
 	}
 }

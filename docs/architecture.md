@@ -49,7 +49,10 @@ the token so `/shared/repo/.git/config` carries no credential into the next step
 
 The **review step** carries only LLM credentials — no `GIT_TOKEN`, no
 `FORGE_TOKEN`. It computes its own diff, and in agentic mode navigates the tree
-with read-only tools. This is the isolation boundary.
+with read-only tools. This is the isolation boundary. To avoid duplicating open
+change requests and to respect resolved threads, the service fetches existing PR
+review threads and passes them in as *data* (`EXISTING_THREADS_B64`, Momos's own
+threads filtered out) — never a token (`plan.md` §11.10).
 
 The **publish step** validates `review.json`, runs a freshness check against the
 current PR head, posts a marker-tagged summary comment (idempotent upsert) plus

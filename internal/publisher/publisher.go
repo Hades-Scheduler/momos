@@ -142,6 +142,9 @@ func toInline(findings []review.Finding) []forge.InlineComment {
 		if f.Suggestion != "" {
 			body += "\n\n_Suggestion:_ " + sanitize(f.Suggestion)
 		}
+		// Tag with the invisible marker so a later run recognizes and drops
+		// Momos's own threads before feeding existing threads to the reviewer.
+		body += "\n" + forge.MomosInlineMarker
 		out = append(out, forge.InlineComment{Path: f.File, Line: f.Line, Side: "RIGHT", Body: body})
 	}
 	return out

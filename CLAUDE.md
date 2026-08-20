@@ -87,6 +87,12 @@ These are load-bearing decisions from `plan.md` §§10–12. Tests guard several
    publisher's retries don't 401 (§12.3).
 8. **git runs hardened**: `safe.directory=*`, `--no-ext-diff`, hooks disabled
    (§12.4). See `internal/reviewer/git.go`.
+9. **Existing PR threads reach the reviewer as data, never a token** (§11.10).
+   The service fetches them (GraphQL, best-effort, 5s) and passes
+   `EXISTING_THREADS_B64`; the review step stays token-free. Momos's own threads
+   are filtered out (by `forge.MomosInlineMarker`) before serializing — feeding
+   them back would make the model drop a finding the publisher then erases.
+   Guarded by `internal/forge` and `internal/job` tests.
 
 ## Common tasks
 

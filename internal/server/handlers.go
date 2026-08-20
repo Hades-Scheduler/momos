@@ -12,6 +12,7 @@ import (
 
 	"github.com/Hades-Scheduler/momos/internal/config"
 	"github.com/Hades-Scheduler/momos/internal/event"
+	"github.com/Hades-Scheduler/momos/internal/forge"
 	"github.com/Hades-Scheduler/momos/internal/job"
 	"github.com/Hades-Scheduler/momos/internal/metrics"
 	"github.com/Hades-Scheduler/momos/internal/store"
@@ -137,6 +138,25 @@ func (s *Server) process(ctx context.Context, ev *event.ReviewEvent) error {
 	if err != nil {
 		return s.fail(ctx, runID, err)
 	}
+
+	// Best-effort: fetch existing (human) review threads so the reviewer avoids
+	// duplicating open change requests and respects resolved ones. Reuse the
+	// publish token (write ⊇ pull_requests:read). A 5s child timeout keeps a
+	// slow GraphQL call from eating the submit budget; on any error we continue
+	// with no threads (never fail the review). Momos's own threads are filtered
+	// out so the model can't suppress a finding the publisher then erases.
+	var existingThreads string
+	if ev.Kind == event.KindPullRequest {
+		tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		threads, terr := f.ListReviewThreads(tctx, ev.RepoID, ev.PRNumber, publishTok.Token)
+		cancel()
+		if terr != nil {
+			s.log.Warn("list review threads failed; continuing without", "run", runID, "err", terr)
+		} else {
+			existingThreads = forge.RenderReviewThreads(forge.FilterOutMomosThreads(threads))
+		}
+	}
+
 	timeout := pol.Timeout.Std()
 	if timeout == 0 {
 		timeout = 15 * time.Minute
@@ -147,7 +167,8 @@ func (s *Server) process(ctx context.Context, ev *event.ReviewEvent) error {
 		RunID: runID, Event: ev, Policy: pol,
 		ForgeType: fc.Type, ForgeAPI: fc.API,
 		PromptText: rendered.Text, PromptVersion: rendered.Version,
-		CloneToken: cloneTok.Token, PublishToken: publishTok.Token,
+		ExistingThreads: existingThreads,
+		CloneToken:      cloneTok.Token, PublishToken: publishTok.Token,
 		CallbackURL: s.cfg.Server.ExternalURL, CallbackToken: callbackTok,
 	})
 

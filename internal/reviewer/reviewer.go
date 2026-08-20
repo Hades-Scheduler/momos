@@ -36,6 +36,10 @@ type Config struct {
 	BaseSHA         string
 	HeadSHA         string
 	RepoID          string
+	// ExistingThreads is the rendered block of existing (human) PR review
+	// threads, injected into the model context so it does not duplicate open
+	// change requests and respects resolved ones. Untrusted data.
+	ExistingThreads string
 }
 
 // FromEnv builds a Config from the step environment.
@@ -62,6 +66,7 @@ func FromEnv() (*Config, error) {
 		BaseSHA:         os.Getenv(protocol.EnvBaseSHA),
 		HeadSHA:         os.Getenv(protocol.EnvHeadSHA2),
 		RepoID:          os.Getenv(protocol.EnvRepoID),
+		ExistingThreads: decodeB64(os.Getenv(protocol.EnvExistingThreadsB64)),
 	}
 	if c.BaseURL == "" || c.Model == "" {
 		return nil, fmt.Errorf("LLM_BASE_URL and LLM_MODEL are required")
@@ -201,6 +206,19 @@ func envDefault(k, def string) string {
 		return v
 	}
 	return def
+}
+
+// decodeB64 best-effort decodes a base64 string, returning "" on any error
+// (an absent or malformed threads block simply yields no thread context).
+func decodeB64(s string) string {
+	if s == "" {
+		return ""
+	}
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return ""
+	}
+	return string(b)
 }
 
 func envInt(k string, def int) int {

@@ -84,6 +84,28 @@ func TestPromptEncodedInReviewStep(t *testing.T) {
 	}
 }
 
+func TestExistingThreadsEncodedInReviewStep(t *testing.T) {
+	in := sampleInputs()
+	in.ExistingThreads = "- thread on a.go:1 [resolved]\n    alice: fixed"
+	p := Build(in)
+	b64 := p.Steps[1].Metadata[protocol.EnvExistingThreadsB64]
+	decoded, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil || string(decoded) != in.ExistingThreads {
+		t.Fatalf("threads not encoded correctly: %q %v", b64, err)
+	}
+	// It is data, not a credential: the isolation invariant still holds.
+	if _, ok := p.Steps[1].Metadata[protocol.EnvForgeToken]; ok {
+		t.Fatal("review step must still carry no forge token")
+	}
+}
+
+func TestExistingThreadsOmittedWhenEmpty(t *testing.T) {
+	p := Build(sampleInputs()) // sampleInputs leaves ExistingThreads == ""
+	if _, ok := p.Steps[1].Metadata[protocol.EnvExistingThreadsB64]; ok {
+		t.Fatal("empty threads must not set EXISTING_THREADS_B64")
+	}
+}
+
 func TestPolicyHashSensitivity(t *testing.T) {
 	pol := sampleInputs().Policy
 	h1 := PolicyHash(pol, "v1")

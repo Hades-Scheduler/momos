@@ -54,6 +54,11 @@ const (
 	EnvBaseSHA         = "BASE_SHA"
 	EnvHeadSHA2        = "HEAD_SHA"
 	EnvRepoID          = "REPO_ID"
+	// EnvExistingThreadsB64 carries the existing PR review threads (human,
+	// Momos's own filtered out) as a base64 text block, so the reviewer can
+	// avoid duplicating open change requests and respect resolved ones. It is
+	// data, not a credential — the review step stays token-free (plan.md §11.4).
+	EnvExistingThreadsB64 = "EXISTING_THREADS_B64"
 )
 
 // Publish step (step 3) metadata. Forge write token + callback credentials.
