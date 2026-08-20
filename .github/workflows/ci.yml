@@ -173,10 +173,18 @@ jobs:
       - uses: azure/setup-kubectl@v4
 
       - name: Write kubeconfig
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
         run: |
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > "$HOME/.kube/config"
+          # Accept the secret as base64 OR as a raw kubeconfig.
+          if printf '%s' "$KUBECONFIG_DATA" | base64 -d 2>/dev/null | grep -q 'apiVersion'; then
+            printf '%s' "$KUBECONFIG_DATA" | base64 -d > "$HOME/.kube/config"
+          else
+            printf '%s' "$KUBECONFIG_DATA" > "$HOME/.kube/config"
+          fi
           chmod 600 "$HOME/.kube/config"
+          kubectl config current-context
 
       - name: Resolve image tag
         id: tag
